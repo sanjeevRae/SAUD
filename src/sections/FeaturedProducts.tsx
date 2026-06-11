@@ -1,10 +1,14 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { filterCategories, products } from '@/data/products';
+import { filterCategories, products as fallbackProducts, type Product } from '@/data/products';
 
-export default function FeaturedProducts() {
+type FeaturedProductsProps = {
+  products?: Product[];
+};
+
+export default function FeaturedProducts({ products = fallbackProducts }: FeaturedProductsProps) {
   return (
     <section id="featured" className="bg-white px-3 py-12 sm:px-4 md:px-6 lg:px-10">
       <div className="mb-6 flex items-center justify-between gap-3 sm:mb-7">
@@ -23,7 +27,7 @@ export default function FeaturedProducts() {
       </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-5 lg:grid-cols-4">
         {products.slice(0, 4).map(product => (
-          <Link key={product.id} href={`/product/${product.id}`} className="group min-w-0 text-left font-body">
+          <Link key={product.id} href={product.linkHref || `/product/${product.id}`} className="group min-w-0 text-left font-body">
             <div className="mb-2 aspect-[4/5] overflow-hidden rounded-lg bg-[#f1f1f1] sm:mb-3 sm:rounded-xl">
               <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
             </div>
@@ -41,3 +45,4 @@ export default function FeaturedProducts() {
     </section>
   );
 }
+

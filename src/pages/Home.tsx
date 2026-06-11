@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Navbar from '@/components/Navbar';
 import CartDrawer from '@/components/CartDrawer';
@@ -11,21 +11,26 @@ import PromoCards from '@/sections/PromoCards';
 import Categories from '@/sections/Categories';
 import WhyChooseUs from '@/sections/WhyChooseUs';
 import Testimonials from '@/sections/Testimonials';
+import type { HomepageConfig } from '@/lib/storefront';
 
-export default function Home() {
+type HomeProps = {
+  homepage?: HomepageConfig;
+};
+
+export default function Home({ homepage }: HomeProps) {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <CartDrawer />
       <main>
-        <Hero />
-        <FeaturedProducts />
-        <Collection />
-        <Products />
+        <Hero banners={homepage?.heroBanners} />
+        <FeaturedProducts products={homepage?.featuredProducts} />
+        <Collection collections={homepage?.collections} />
+        <Products products={homepage?.latestProducts} />
         <PromoCards />
-        <Categories />
+        <Categories categories={homepage?.categories} />
         <WhyChooseUs />
-        <Testimonials />
+        <Testimonials testimonials={homepage?.testimonials} />
       </main>
       <Footer />
     </div>

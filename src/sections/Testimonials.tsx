@@ -2,9 +2,13 @@
 
 import { useRef } from 'react';
 import { ArrowLeft, ArrowRight, Star } from 'lucide-react';
-import { testimonials } from '@/data/products';
+import { testimonials as fallbackTestimonials, type Testimonial } from '@/data/products';
 
-export default function Testimonials() {
+type TestimonialsProps = {
+  testimonials?: Testimonial[];
+};
+
+export default function Testimonials({ testimonials = fallbackTestimonials }: TestimonialsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scroll = (direction: 'left' | 'right') => scrollRef.current?.scrollBy({ left: direction === 'left' ? -390 : 390, behavior: 'smooth' });
 

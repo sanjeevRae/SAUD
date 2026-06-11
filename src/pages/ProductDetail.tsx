@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BadgePercent, ChevronDown, Clock, Menu, Package, Search, ShoppingCart, Star, Truck } from 'lucide-react';
-import { products } from '@/data/products';
+import { BadgePercent, ChevronDown, Clock, Package, Search, ShoppingCart, Star, Truck } from 'lucide-react';
+import { products, type Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -25,9 +25,15 @@ const ratingBreakdown = [
   { stars: 1, count: 1 },
 ];
 
-export default function ProductDetail({ productId }: { productId: string }) {
+type ProductDetailProps = {
+  product?: Product;
+  productId?: string;
+  relatedProducts?: Product[];
+};
+
+export default function ProductDetail({ product: productProp, productId, relatedProducts: relatedProductsProp }: ProductDetailProps) {
   const router = useRouter();
-  const { addToCart, totalItems, setIsCartOpen } = useCart();
+  const { addToCart, totalItems, setIsCartOpen, trackActivity } = useCart();
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -38,13 +44,13 @@ export default function ProductDetail({ productId }: { productId: string }) {
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
   const product = useMemo(
-    () => products.find(item => item.id === productId) ?? products[0],
-    [productId],
+    () => productProp ?? products.find(item => item.id === productId) ?? products[0],
+    [productId, productProp],
   );
 
   const relatedProducts = useMemo(
-    () => products.filter(item => item.id !== product.id).slice(0, 4),
-    [product.id],
+    () => relatedProductsProp ?? products.filter(item => item.id !== product.id).slice(0, 4),
+    [product.id, relatedProductsProp],
   );
 
   const images = useMemo(() => {
@@ -75,6 +81,10 @@ export default function ProductDetail({ productId }: { productId: string }) {
       items: ['Tops', 'T-Shirts', 'Shirts & Blouses', 'Dresses', 'Skirts', 'Jeans', 'Pants & Trousers', 'Leggings', 'Hoodies & Sweatshirts', 'Jackets', 'Coats', 'Ethnic Wear', 'Activewear', 'Lingerie', 'Sleepwear', 'Footwear', 'Accessories'],
     },
   ];
+
+  useEffect(() => {
+    trackActivity('product_view', { productId: product.id, name: product.name, category: product.category });
+  }, [product.category, product.id, product.name, trackActivity]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -138,14 +148,15 @@ export default function ProductDetail({ productId }: { productId: string }) {
                               onClick={() => {
                                 setIsSearchOpen(false);
                                 setSearchQuery('');
-                                router.push(`/product/${item.id}`);
+                                trackActivity('product_click', { productId: item.id, name: item.name, source: 'product_search' });
+                                router.push(item.linkHref || `/product/${item.id}`);
                               }}
                               className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[#f6f6f6]"
                             >
                               <img src={item.image} alt={item.name} className="h-12 w-12 rounded-lg object-cover" />
                               <span className="min-w-0">
                                 <span className="font-body block truncate text-sm font-semibold text-[#111111]">{item.name}</span>
-                                <span className="font-body block text-xs text-[#777777]">{item.category} • ${item.price}</span>
+                                <span className="font-body block text-xs text-[#777777]">{item.category} â€¢ Rs{item.price}</span>
                               </span>
                             </button>
                           ))}
@@ -251,7 +262,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <div className="font-body inline-flex items-center gap-3 rounded-full border border-[#e2e2e2] px-3.5 py-2.5 text-xs sm:px-4 sm:py-3 sm:text-sm">
-                <button onClick={() => setQuantity(current => Math.max(1, current - 1))}>−</button>
+                <button onClick={() => setQuantity(current => Math.max(1, current - 1))}>-</button>
                 <span className="font-semibold">{quantity}</span>
                 <button onClick={() => setQuantity(current => current + 1)}>+</button>
               </div>
@@ -346,7 +357,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
           <h2 className="mb-8 text-center font-body text-2xl font-normal sm:mb-10 sm:text-4xl">You might also like</h2>
           <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
             {relatedProducts.map(item => (
-              <button key={item.id} onClick={() => router.push(`/product/${item.id}`)} className="font-body text-left">
+              <button key={item.id} onClick={() => { trackActivity('product_click', { productId: item.id, name: item.name, source: 'related_products' }); router.push(item.linkHref || `/product/${item.id}`); }} className="font-body text-left">
                 <div className="mb-3 aspect-square overflow-hidden rounded-xl bg-[#eeeeee]">
                   <img src={item.image} alt={item.name} className="!h-full !w-full max-w-none object-cover object-center" />
                 </div>
@@ -362,3 +373,5 @@ export default function ProductDetail({ productId }: { productId: string }) {
     </div>
   );
 }
+
+

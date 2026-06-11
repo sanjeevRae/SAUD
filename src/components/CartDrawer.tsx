@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function CartDrawer() {
-  const { items, isCartOpen, setIsCartOpen, totalPrice, updateQuantity, removeFromCart } = useCart();
+  const { items, isCartOpen, setIsCartOpen, totalPrice, updateQuantity, removeFromCart, checkout, checkoutStatus } = useCart();
 
   if (!isCartOpen) {
     return null;
@@ -39,7 +39,7 @@ export default function CartDrawer() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-body text-sm font-semibold text-[#111111]">{item.name}</h3>
-                      <p className="mt-1 font-body text-xs text-[#777777]">${item.price}</p>
+                      <p className="mt-1 font-body text-xs text-[#777777]">Rs{item.price}</p>
                       {item.selectedSize ? (
                         <p className="mt-1 font-body text-xs text-[#777777]">Size: {item.selectedSize}</p>
                       ) : null}
@@ -68,15 +68,27 @@ export default function CartDrawer() {
         </div>
 
         <div className="border-t border-[#ececec] px-5 py-4">
-          <div className="mb-4 flex items-center justify-between font-body text-sm">
-            <span>Total</span>
-            <strong>${totalPrice.toFixed(2)}</strong>
+          <div className="mb-3 flex items-center justify-between font-body text-sm">
+            <span>Subtotal</span>
+            <strong>Rs{totalPrice.toFixed(2)}</strong>
           </div>
-          <button className="font-body w-full rounded-full bg-[#111111] px-4 py-3 text-sm font-semibold text-white">
-            Checkout
+          <div className="mb-3 flex items-center justify-between font-body text-sm">
+            <span>Delivery</span>
+            <strong>Rs120.00</strong>
+          </div>
+          <div className="mb-4 flex items-center justify-between font-body text-sm font-semibold">
+            <span>Total COD</span>
+            <strong>Rs{(totalPrice + 120).toFixed(2)}</strong>
+          </div>
+          <button onClick={() => void checkout()} className="font-body w-full rounded-full bg-[#111111] px-4 py-3 text-sm font-semibold text-white">
+            Cash on Delivery
           </button>
-        </div>
-      </aside>
+          {checkoutStatus && <p className="mt-3 text-xs text-[#666]">{checkoutStatus}</p>}
+        </div>      </aside>
     </div>
   );
 }
+
+
+
+

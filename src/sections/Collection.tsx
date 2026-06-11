@@ -1,21 +1,25 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MoveUpRight } from 'lucide-react';
-import { collections } from '@/data/products';
+import { collections as fallbackCollections, type Collection as StoreCollection } from '@/data/products';
 
-const collectionStrip = [
+const getCollectionStrip = (collections: StoreCollection[]) => [
   ...collections,
-  { id: '6', title: 'Evening Minimal', image: '/product_07.jpg' },
-  { id: '7', title: 'Soft Street', image: '/product_08.jpg' },
+  { id: '6', title: 'Evening Minimal', image: '/product_07.jpg', linkHref: '/main-product?collection=evening-minimal' },
+  { id: '7', title: 'Soft Street', image: '/product_08.jpg', linkHref: '/main-product?collection=soft-street' },
 ];
 
-const wrapIndex = (index: number) => ((index % collectionStrip.length) + collectionStrip.length) % collectionStrip.length;
+type CollectionProps = {
+  collections?: StoreCollection[];
+};
 
-export default function Collection() {
+export default function Collection({ collections = fallbackCollections }: CollectionProps) {
+  const collectionStrip = getCollectionStrip(collections);
+  const wrapIndex = (index: number) => ((index % collectionStrip.length) + collectionStrip.length) % collectionStrip.length;
   const [activeIndex, setActiveIndex] = useState(3);
-  const active = collectionStrip[activeIndex];
-
+  const active = collectionStrip[activeIndex] ?? collectionStrip[0];
   const navigate = (direction: 'prev' | 'next') => {
     setActiveIndex(previous => wrapIndex(direction === 'prev' ? previous - 1 : previous + 1));
   };
@@ -54,9 +58,9 @@ export default function Collection() {
             ChitraTech Shop: The Collection
           </h2>
         </div>
-        <button className="hidden items-center gap-3 border border-[#8f1f35] px-5 py-3 text-xs text-[#8f1f35] md:flex">
+        <Link href="/main-product" className="hidden items-center gap-3 border border-[#8f1f35] px-5 py-3 text-xs text-[#8f1f35] md:flex">
           Explore more <MoveUpRight size={15} />
-        </button>
+        </Link>
       </div>
 
       <div className="relative mx-auto h-[390px] md:hidden">
@@ -131,7 +135,7 @@ export default function Collection() {
       </div>
       <div className="mt-6 text-center">
         <h3 className="mb-2 text-lg font-semibold text-[#111111]">{active.title} Collection</h3>
-        <button className="border-b border-[#111111] text-lg leading-none text-[#111111]">See Detail</button>
+        <Link href={active.linkHref || `/main-product?collection=${encodeURIComponent(active.title)}`} className="border-b border-[#111111] text-lg leading-none text-[#111111]">See Detail</Link>
       </div>
       <div className="mt-8 flex justify-center gap-4 md:gap-6">
         <button onClick={() => navigate('prev')} aria-label="Previous collection" className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dedede] transition-colors hover:bg-[#111111] hover:text-white"><ArrowLeft size={22} /></button>
@@ -140,3 +144,5 @@ export default function Collection() {
     </section>
   );
 }
+
+

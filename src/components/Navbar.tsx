@@ -1,11 +1,12 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Menu, Search, ShoppingCart, UserCircle, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { products } from '@/data/products';
+import { useCustomerAuth } from '@/context/CustomerAuthContext';
+import type { Product } from '@/data/products';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -14,8 +15,12 @@ export default function Navbar() {
   const [activeCategoryMenu, setActiveCategoryMenu] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [countdown, setCountdown] = useState('22h37m54s');
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, setIsCartOpen, trackActivity } = useCart();
+  const { user, openLogin, logout } = useCustomerAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -52,21 +57,40 @@ export default function Navbar() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const searchResults = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+  useEffect(() => {
+    if (!isSearchOpen) return;
 
-    if (!query) {
-      return products.slice(0, 5);
-    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setIsSearching(true);
+      setSearchError('');
+      try {
+        const params = new URLSearchParams({ limit: '6' });
+        const query = searchQuery.trim();
+        if (query) params.set('q', query);
+        const response = await fetch(`/api/products/search?${params.toString()}`, { signal: controller.signal });
+        const data = await response.json();
+        setSearchResults(data.products ?? []);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setSearchResults([]);
+          setSearchError(error instanceof Error ? error.message : 'Search failed.');
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    }, 180);
 
-    return products.filter(product =>
-      [product.name, product.category, product.description].some(value => value.toLowerCase().includes(query)),
-    );
-  }, [searchQuery]);
-
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [isSearchOpen, searchQuery]);
   const closeSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
+    setSearchResults([]);
+    setSearchError('');
   };
 
   const openSearch = () => {
@@ -76,9 +100,17 @@ export default function Navbar() {
     setIsSearchOpen(true);
   };
 
-  const openProduct = (productId: string) => {
+  const openSearchResults = (query = searchQuery) => {
+    const value = query.trim();
     closeSearch();
-    router.push(`/product/${productId}`);
+    if (value) trackActivity('search', { query: value });
+    router.push(value ? `/main-product?q=${encodeURIComponent(value)}` : '/main-product');
+  };
+
+  const openProduct = (product: Product) => {
+    closeSearch();
+    trackActivity('product_click', { productId: product.id, name: product.name, source: 'navbar_search' });
+    router.push(product.linkHref || `/product/${product.id}`);
   };
 
   return (
@@ -186,10 +218,21 @@ export default function Navbar() {
               <ShoppingCart size={16} strokeWidth={1.8} />
               <span>({totalItems})</span>
             </button>
-            <button className="hidden items-center gap-2 p-1 text-xs font-medium text-[#111111] md:flex">
-              <UserCircle size={22} strokeWidth={1.5} />
-              Bhuwan Bhatt
-            </button>
+            {user ? (
+              <div className="hidden items-center gap-3 md:flex">
+                <button onClick={() => router.push('/profile')} className="flex items-center gap-2 p-1 text-xs font-medium text-[#111111]">
+                  <UserCircle size={22} strokeWidth={1.5} />
+                  {user.name}
+                </button>
+                <button onClick={logout} className="text-xs text-[#777] underline">Logout</button>
+              </div>
+            ) : (
+              <button onClick={openLogin} className="hidden items-center gap-2 p-1 text-xs font-medium text-[#111111] md:flex">
+                <UserCircle size={22} strokeWidth={1.5} />
+                Login / Register
+              </button>
+            )}
+            <button onClick={() => user ? router.push('/profile') : openLogin()} className="md:hidden" aria-label="Profile"><UserCircle size={18} /></button>
             <button onClick={openSearch} className="md:hidden" aria-label="Search">
               <Search size={18} />
             </button>
@@ -219,12 +262,12 @@ export default function Navbar() {
       </header>
 
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/40 p-0 backdrop-blur-[2px]" onClick={closeSearch}>
+        <div className="fixed inset-0 z-[300] bg-black/40 p-0 backdrop-blur-[2px]" onClick={closeSearch}>
           <div
             className="mx-auto mt-16 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
             onClick={event => event.stopPropagation()}
           >
-            <div className="flex items-center gap-3 border-b border-[#ececec] px-4 py-4 sm:px-5">
+            <form className="flex items-center gap-3 border-b border-[#ececec] px-4 py-4 sm:px-5" onSubmit={event => { event.preventDefault(); openSearchResults(); }}>
               <Search size={18} className="text-[#777777]" strokeWidth={1.7} />
               <input
                 autoFocus
@@ -241,37 +284,38 @@ export default function Navbar() {
               >
                 <X size={18} strokeWidth={1.8} />
               </button>
-            </div>
+            </form>
 
             <div className="px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#777777]">
                   {searchQuery.trim() ? 'Search results' : 'Popular picks'}
                 </p>
-                <span className="text-xs text-[#999999]">{searchResults.length} items</span>
+                <span className="text-xs text-[#999999]">{isSearching ? 'Searching...' : `${searchResults.length} items`}</span>
               </div>
 
               <div className="space-y-2">
+                {searchError && <p className="rounded-2xl bg-[#fff7ed] px-4 py-3 text-xs text-[#9a3412]">{searchError}</p>}
                 {searchResults.length > 0 ? (
                   searchResults.map(product => (
                     <button
                       key={product.id}
                       type="button"
-                      onClick={() => openProduct(product.id)}
+                      onClick={() => openProduct(product)}
                       className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-[#f8f8f8]"
                     >
                       <img src={product.image} alt={product.name} className="h-14 w-14 rounded-2xl object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-body text-sm font-semibold text-[#111111]">{product.name}</p>
-                        <p className="mt-1 truncate font-body text-xs text-[#777777]">{product.category} · {product.description}</p>
+                        <p className="mt-1 truncate font-body text-xs text-[#777777]">{product.category} / {product.description}</p>
                       </div>
-                      <span className="font-body text-sm font-semibold text-[#111111]">${product.price}</span>
+                      <span className="font-body text-sm font-semibold text-[#111111]">Rs{Number(product.price).toFixed(2)}</span>
                     </button>
                   ))
                 ) : (
                   <div className="rounded-2xl bg-[#fafafa] px-4 py-8 text-center">
                     <p className="font-body text-sm font-medium text-[#111111]">No products found</p>
-                    <p className="mt-1 font-body text-xs text-[#777777]">Try a different keyword, category, or style.</p>
+                    <p className="mt-1 font-body text-xs text-[#777777]">Try a different keyword, category, size, color, or style.</p>
                   </div>
                 )}
               </div>
@@ -282,3 +326,12 @@ export default function Navbar() {
     </>
   );
 }
+
+
+
+
+
+
+
+
+

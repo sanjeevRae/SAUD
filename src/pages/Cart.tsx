@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -7,7 +7,7 @@ import CartDrawer from '@/components/CartDrawer';
 import { useCart } from '@/context/CartContext';
 
 export default function Cart() {
-  const { items, totalPrice, updateQuantity, removeFromCart } = useCart();
+  const { items, totalPrice, updateQuantity, removeFromCart, checkout, checkoutStatus } = useCart();
 
   return (
     <div className="min-h-screen bg-white text-[#111111]">
@@ -38,7 +38,7 @@ export default function Cart() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <h2 className="font-body text-lg font-semibold">{item.name}</h2>
-                        <p className="font-body mt-1 text-sm text-[#666666]">${item.price}</p>
+                        <p className="font-body mt-1 text-sm text-[#666666]">Rs{item.price}</p>
                         {item.selectedSize ? <p className="font-body mt-1 text-xs text-[#888888]">Size: {item.selectedSize}</p> : null}
                       </div>
                       <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="font-body text-sm text-[#777777] underline underline-offset-4">
@@ -48,7 +48,7 @@ export default function Cart() {
 
                     <div className="mt-4 inline-flex items-center gap-4 rounded-full border border-[#e2e2e2] px-4 py-2">
                       <button onClick={() => updateQuantity(item.id, item.quantity - 1, item.selectedSize)} className="font-body text-sm">
-                        −
+                        âˆ’
                       </button>
                       <span className="font-body text-sm font-semibold">{item.quantity}</span>
                       <button onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedSize)} className="font-body text-sm">
@@ -65,21 +65,26 @@ export default function Cart() {
               <div className="mt-6 space-y-4 font-body text-sm">
                 <div className="flex items-center justify-between">
                   <span>Subtotal</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>Rs{totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Shipping</span>
-                  <span>Free</span>
+                  <span>Delivery</span>
+                  <span>Rs120.00</span>
                 </div>
                 <div className="h-px bg-[#dfdfdf]" />
                 <div className="flex items-center justify-between text-base font-semibold">
-                  <span>Total</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>Total COD</span>
+                  <span>Rs{(totalPrice + 120).toFixed(2)}</span>
                 </div>
               </div>
-              <button className="font-body mt-8 w-full rounded-full bg-[#111111] px-5 py-3 text-sm font-semibold text-white">
-                Proceed to checkout
+              <div className="mt-5 rounded-2xl border border-[#dedede] bg-white p-4 font-body text-sm">
+                <p className="font-semibold">Payment method</p>
+                <p className="mt-1 text-[#666]">Cash on Delivery. Delivery charge Rs120.</p>
+              </div>
+              <button onClick={() => void checkout()} className="font-body mt-8 w-full rounded-full bg-[#111111] px-5 py-3 text-sm font-semibold text-white">
+                Place COD order
               </button>
+              {checkoutStatus && <p className="mt-3 text-sm text-[#666]">{checkoutStatus}</p>}
             </aside>
           </div>
         )}
@@ -89,3 +94,7 @@ export default function Cart() {
     </div>
   );
 }
+
+
+
+

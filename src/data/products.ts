@@ -1,4 +1,4 @@
-export type Product = {
+﻿export type Product = {
   id: string;
   name: string;
   price: number;
@@ -13,12 +13,21 @@ export type Product = {
   reviewCount?: number;
   stock?: number;
   tag?: string;
+  linkHref?: string;
+  enabled?: boolean;
+  featuredOrder?: number;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  ogImage?: string;
+  canonicalPath?: string;
 };
 
 export type Collection = {
   id: string;
   title: string;
   image: string;
+  linkHref?: string;
 };
 
 export type Testimonial = {
@@ -250,3 +259,6 @@ export const curatedPicks = [
 ];
 
 export const filterCategories = ['All', 'Knitwear', 'Dresses', 'T-Shirt', 'Cami', 'Polo'];
+
+
+

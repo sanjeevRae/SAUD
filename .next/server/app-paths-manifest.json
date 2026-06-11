@@ -1,3 +1,6 @@
 {
-  "/product/[id]/page": "app/product/[id]/page.js"
+  "/api/customer/cart/route": "app/api/customer/cart/route.js",
+  "/page": "app/page.js",
+  "/product/[id]/page": "app/product/[id]/page.js",
+  "/profile/page": "app/profile/page.js"
 }

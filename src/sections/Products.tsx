@@ -1,14 +1,17 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, MoveUpRight } from 'lucide-react';
-import { products } from '@/data/products';
+import { products as fallbackProducts, type Product } from '@/data/products';
 
-const wrapIndex = (index: number) => ((index % products.length) + products.length) % products.length;
+
 const productSlots = [-3, -2, -1, 0, 1, 2, 3];
 
-export default function Products() {
+type ProductsProps = { products?: Product[] };
+
+export default function Products({ products = fallbackProducts }: ProductsProps) {
+  const wrapIndex = (index: number) => ((index % products.length) + products.length) % products.length;
   const [activeIndex, setActiveIndex] = useState(4);
   const router = useRouter();
   const activeProduct = products[activeIndex];
@@ -95,11 +98,11 @@ export default function Products() {
         <div className="mb-3 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-[12px] font-semibold leading-snug text-[#111111]">{activeProduct.name}</h3>
-            <p className="mt-1 text-[11px] font-semibold">${activeProduct.price.toFixed(2)}</p>
+            <p className="mt-1 text-[11px] font-semibold">Rs{activeProduct.price.toFixed(2)}</p>
           </div>
           <span className="border border-[#ededed] px-2 py-1 text-[9px] text-[#6e6e6e]">{activeProduct.category}</span>
         </div>
-        <button onClick={() => router.push(`/product/${activeProduct.id}`)} className="w-full border border-[#111111] py-2 text-[10px] font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white">
+        <button onClick={() => router.push(activeProduct.linkHref || `/product/${activeProduct.id}`)} className="w-full border border-[#111111] py-2 text-[10px] font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white">
           See detail
         </button>
       </div>
@@ -139,7 +142,7 @@ export default function Products() {
         <div className="absolute left-[calc(50%+52px)] top-[178px] z-30 w-[190px] border border-[#d8d8d8] bg-white p-3 text-left shadow-sm xl:left-[calc(50%+66px)]">
           <div className="absolute -left-[72px] top-[13px] h-px w-[86px] origin-right rotate-[42deg] bg-[#9a2b3f]" />
           <h3 className="mb-1 text-[11px] font-semibold leading-snug text-[#111111]">{activeProduct.name}</h3>
-          <p className="text-[11px] font-semibold text-[#111111]">${activeProduct.price.toFixed(2)}</p>
+          <p className="text-[11px] font-semibold text-[#111111]">Rs{activeProduct.price.toFixed(2)}</p>
           <div className="mt-2 flex gap-1.5">
             {(activeProduct.colors ?? []).slice(0, 3).map(color => (
               <span key={color.name} className="h-3 w-3 border border-[#d8d8d8]" style={{ backgroundColor: color.hex }} title={color.name} />
@@ -155,7 +158,7 @@ export default function Products() {
               ))}
             </div>
         </div>
-          <button onClick={() => router.push(`/product/${activeProduct.id}`)} className="mt-2 w-full border border-[#111111] py-2 text-[10px] font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white">
+          <button onClick={() => router.push(activeProduct.linkHref || `/product/${activeProduct.id}`)} className="mt-2 w-full border border-[#111111] py-2 text-[10px] font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white">
             See detail
           </button>
         </div>
@@ -168,3 +171,5 @@ export default function Products() {
     </section>
   );
 }
+
+

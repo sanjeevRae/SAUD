@@ -6,6 +6,8 @@ type MainProductRouteProps = {
     q?: string;
     category?: string;
     gender?: string;
+    sort?: string;
+    title?: string;
   }>;
 };
 
@@ -15,13 +17,14 @@ export default async function MainProductRoute({ searchParams }: MainProductRout
     q: params.q,
     category: params.category,
     gender: params.gender,
+    sort: params.sort,
     limit: 64,
   });
 
   return (
     <MainProduct
       products={products}
-      activeCategory={params.category || params.gender}
+      activeCategory={params.title || params.category || params.gender}
       query={params.q}
     />
   );

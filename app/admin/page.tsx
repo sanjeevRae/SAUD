@@ -1,7 +1,6 @@
 ﻿import Link from 'next/link';
 import ProductAdmin from '@/components/admin/ProductAdmin';
 import CmsAdmin from '@/components/admin/CmsAdmin';
-import SeedStorefrontButton from '@/components/admin/SeedStorefrontButton';
 
 const collections = [
   { name: 'Products', path: 'products', fields: 'Prices, images, stock, colors, SEO', count: 'Store' },
@@ -94,7 +93,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </section>
 
         <div className="mt-8 space-y-8">
-          <SeedStorefrontButton token={params.token || ''} />
           <CmsAdmin token={params.token || ''} />
           <ProductAdmin token={params.token || ''} />
         </div>
@@ -102,5 +100,4 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     </main>
   );
 }
-
 

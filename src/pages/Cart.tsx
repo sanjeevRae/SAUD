@@ -24,10 +24,10 @@ export default function Cart() {
     fullName: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    city: '',
-    area: '',
+    city: user?.city || '',
+    area: user?.area || '',
     address: user?.address || '',
-    landmark: '',
+    landmark: user?.landmark || '',
   });
   const [formError, setFormError] = useState('');
 
@@ -38,7 +38,10 @@ export default function Cart() {
       fullName: current.fullName || user?.name || '',
       phone: current.phone || user?.phone || '',
       email: current.email || user?.email || '',
+      city: current.city || user?.city || '',
+      area: current.area || user?.area || '',
       address: current.address || user?.address || '',
+      landmark: current.landmark || user?.landmark || '',
     }));
   }, [user]);
   const delivery = deliveryOptions.find(option => option.id === selectedDelivery) ?? deliveryOptions[1];

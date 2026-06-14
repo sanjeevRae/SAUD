@@ -52,6 +52,9 @@ export async function POST(request: NextRequest) {
       photo: String(body.photo || existing?.photo || ''),
       firebaseUid: String(body.firebaseUid || existing?.firebaseUid || ''),
       address: String(existing?.address || ''),
+      city: String(existing?.city || ''),
+      area: String(existing?.area || ''),
+      landmark: String(existing?.landmark || ''),
       updatedAt: new Date().toISOString(),
       createdAt: String(existing?.createdAt || new Date().toISOString()),
     };
@@ -75,6 +78,9 @@ export async function PATCH(request: NextRequest) {
       email: String(body.email || existing.email || ''),
       phone: String(body.phone || existing.phone || ''),
       address: String(body.address || existing.address || ''),
+      city: String(body.city || existing.city || ''),
+      area: String(body.area || existing.area || ''),
+      landmark: String(body.landmark || existing.landmark || ''),
       photo: String(body.photo || existing.photo || ''),
       updatedAt: new Date().toISOString(),
     };

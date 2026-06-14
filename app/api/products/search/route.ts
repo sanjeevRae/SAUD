@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     q: searchParams.get('q') || undefined,
     category: searchParams.get('category') || undefined,
     gender: searchParams.get('gender') || undefined,
+    sort: searchParams.get('sort') || undefined,
     limit: Number(searchParams.get('limit') || 8),
   });
 

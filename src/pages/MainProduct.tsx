@@ -17,7 +17,7 @@ type MainProductProps = {
 export default function MainProduct({ products = fallbackProducts, activeCategory, query }: MainProductProps) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState(query ?? '');
-  const heading = query ? `Results for "${query}"` : 'Everything you need, in one place.';
+  const heading = activeCategory && activeCategory !== 'All products' ? activeCategory : query ? `Results for "${query}"` : 'Everything you need, in one place.';
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

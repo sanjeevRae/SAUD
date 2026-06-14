@@ -1,9 +1,9 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronDown, Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, Search, ShoppingCart, UserRound, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
 import type { Product } from '@/data/products';
@@ -13,12 +13,53 @@ type NavbarProps = {
   notices?: NoticeBanner[];
 };
 
+const latestMenu = [
+  { label: 'New This Week', href: '/main-product?sort=newest&title=New%20This%20Week' },
+  { label: 'New This Month', href: '/main-product?sort=newest&title=New%20This%20Month' },
+  { label: 'Trending New Products', href: '/main-product?sort=trending&title=Trending%20New%20Products' },
+];
+
+const categoryMenus: Record<string, { label: string; href: string }[]> = {
+  Best: [
+    { label: 'Top Selling Men', href: '/main-product?gender=men&sort=top-selling&title=Top%20Selling%20Men' },
+    { label: 'Top Selling Women', href: '/main-product?gender=women&sort=top-selling&title=Top%20Selling%20Women' },
+    { label: 'Top Selling Kids', href: '/main-product?gender=kids&sort=top-selling&title=Top%20Selling%20Kids' },
+    { label: 'Most Loved Products', href: '/main-product?sort=loved&title=Most%20Loved%20Products' },
+  ],
+  Men: [
+    'T-Shirts',
+    'Shirts',
+    'Polo Shirts',
+    'Jeans',
+    'Pants & Trousers',
+    'Shorts',
+    'Hoodies & Sweatshirts',
+    'Jackets',
+    'Coats',
+    'Blazers',
+    'Suits',
+  ].map(label => ({ label, href: `/main-product?gender=men&q=${encodeURIComponent(label)}&title=${encodeURIComponent(`Men ${label}`)}` })),
+  Women: [
+    'Tops',
+    'T-Shirts',
+    'Shirts & Blouses',
+    'Dresses',
+    'Skirts',
+    'Jeans',
+    'Pants & Trousers',
+    'Leggings',
+    'Hoodies & Sweatshirts',
+    'Jackets',
+  ].map(label => ({ label, href: `/main-product?gender=women&q=${encodeURIComponent(label)}&title=${encodeURIComponent(`Women ${label}`)}` })),
+};
+
 export default function Navbar({ notices = [] }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [activeCategoryMenu, setActiveCategoryMenu] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -27,6 +68,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
   const [fallbackCountdownTarget] = useState(() => Date.now() + (22 * 60 * 60 + 37 * 60 + 54) * 1000);
   const { totalItems, trackActivity } = useCart();
   const { user, openLogin, logout } = useCustomerAuth();
+  const accountRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -53,10 +95,12 @@ export default function Navbar({ notices = [] }: NavbarProps) {
       {user ? initials : '?'}
     </span>
   );
-  const categoryMenus: Record<string, string[]> = {
-    Best: ['Top Selling Men', 'Top Selling Women', 'Top Selling Kids', 'Most Loved Products'],
-    Men: ['T-Shirts', 'Shirts', 'Polo Shirts', 'Jeans', 'Pants & Trousers', 'Shorts', 'Hoodies & Sweatshirts', 'Jackets', 'Coats', 'Blazers', 'Suits'],
-    Women: ['Tops', 'T-Shirts', 'Shirts & Blouses', 'Dresses', 'Skirts', 'Jeans', 'Pants & Trousers', 'Leggings', 'Hoodies & Sweatshirts', 'Jackets'],
+  const openProductsMenu = (href: string, label: string) => {
+    setIsShopOpen(false);
+    setActiveCategoryMenu(null);
+    setIsMobileMenuOpen(false);
+    trackActivity('navbar_menu_click', { label, href });
+    router.push(href);
   };
 
   useEffect(() => {
@@ -64,10 +108,20 @@ export default function Navbar({ notices = [] }: NavbarProps) {
       setIsScrolled(window.scrollY > 40);
       setIsShopOpen(false);
       setActiveCategoryMenu(null);
+      setIsAccountOpen(false);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isAccountOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) setIsAccountOpen(false);
+    };
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => window.removeEventListener('mousedown', handlePointerDown);
+  }, [isAccountOpen]);
 
   useEffect(() => {
     const saleEndsAt = Number.isFinite(countdownTarget) ? countdownTarget : Date.now();
@@ -125,6 +179,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
     setIsMobileMenuOpen(false);
     setIsShopOpen(false);
     setActiveCategoryMenu(null);
+    setIsAccountOpen(false);
     setIsSearchOpen(true);
   };
 
@@ -183,15 +238,13 @@ export default function Navbar({ notices = [] }: NavbarProps) {
 
               {isShopOpen && (
                 <div className="absolute left-0 top-full z-[130] mt-3 w-56 rounded-xl border border-[#dedede] bg-white py-2 shadow-lg">
-                  {['New This Week', 'New This Month', 'Trending New Products'].map(item => (
+                  {latestMenu.map(item => (
                     <button
-                      key={item}
-                      onClick={() => {
-                        setIsShopOpen(false);
-                      }}
+                      key={item.label}
+                      onClick={() => openProductsMenu(item.href, item.label)}
                       className="block w-full px-4 py-2 text-left text-xs text-[#111111] hover:bg-[#f5f5f5]"
                     >
-                      {item}
+                      {item.label}
                     </button>
                   ))}
                 </div>
@@ -215,13 +268,11 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {categoryMenus[item].map(menuItem => (
                         <button
-                          key={menuItem}
-                          onClick={() => {
-                            setActiveCategoryMenu(null);
-                          }}
+                          key={menuItem.label}
+                          onClick={() => openProductsMenu(menuItem.href, menuItem.label)}
                           className="text-left text-sm text-[#111111] transition-colors hover:text-[#8f1f35]"
                         >
-                          {menuItem}
+                          {menuItem.label}
                         </button>
                       ))}
                     </div>
@@ -248,12 +299,46 @@ export default function Navbar({ notices = [] }: NavbarProps) {
               <span>({totalItems})</span>
             </button>
             {user ? (
-              <div className="hidden items-center gap-3 md:flex">
-                <button onClick={() => router.push('/profile')} className="flex items-center gap-2 p-1 text-xs font-medium text-[#111111]">
+              <div ref={accountRef} className="relative hidden md:block">
+                <button
+                  onClick={() => {
+                    setIsShopOpen(false);
+                    setActiveCategoryMenu(null);
+                    setIsAccountOpen(current => !current);
+                  }}
+                  className="flex items-center gap-2 p-1 text-xs font-medium text-[#111111]"
+                  aria-expanded={isAccountOpen}
+                  aria-haspopup="menu"
+                >
                   {renderProfileAvatar('h-8 w-8')}
                   <span className="max-w-[120px] truncate">{displayName}</span>
+                  <ChevronDown size={13} />
                 </button>
-                <button onClick={logout} className="text-xs text-[#777] underline">Logout</button>
+                {isAccountOpen && (
+                  <div className="absolute right-0 top-full z-[140] mt-3 w-56 border border-[#dedede] bg-white p-2 shadow-lg" role="menu">
+                    <button
+                      onClick={() => {
+                        setIsAccountOpen(false);
+                        router.push('/profile');
+                      }}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-[#f5f5f5]"
+                      role="menuitem"
+                    >
+                      <UserRound size={16} /> View profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAccountOpen(false);
+                        logout();
+                        router.push('/');
+                      }}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-[#8f1f35] hover:bg-[#fff7f7]"
+                      role="menuitem"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button onClick={openLogin} className="hidden items-center gap-2 p-1 text-xs font-medium text-[#111111] md:flex">
@@ -261,7 +346,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                 Login / Register
               </button>
             )}
-            <button onClick={() => user ? router.push('/profile') : openLogin()} className="md:hidden" aria-label="Profile">
+            <button onClick={() => user ? setIsAccountOpen(current => !current) : openLogin()} className="md:hidden" aria-label="Profile">
               {renderProfileAvatar('h-8 w-8')}
             </button>
             <button onClick={openSearch} className="md:hidden" aria-label="Search">
@@ -278,14 +363,54 @@ export default function Navbar({ notices = [] }: NavbarProps) {
           </div>
         </nav>
 
+        {user && isAccountOpen && (
+          <div className="absolute right-4 top-full z-[140] mt-2 w-56 border border-[#dedede] bg-white p-2 shadow-lg md:hidden" role="menu" onMouseDown={event => event.stopPropagation()}>
+            <button
+              onClick={() => {
+                setIsAccountOpen(false);
+                router.push('/profile');
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-[#f5f5f5]"
+              role="menuitem"
+            >
+              <UserRound size={16} /> View profile
+            </button>
+            <button
+              onClick={() => {
+                setIsAccountOpen(false);
+                logout();
+                router.push('/');
+              }}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-[#8f1f35] hover:bg-[#fff7f7]"
+              role="menuitem"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
+        )}
+
         {isMobileMenuOpen && (
           <div className="border-t border-[#ececec] bg-white px-4 py-4 md:hidden">
-            <div className="space-y-3">
-              <button className="block text-left text-sm text-[#111111]">Latest Collection</button>
+            <div className="grid gap-5">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">Latest Collection</p>
+                <div className="grid gap-2">
+                  {latestMenu.map(item => (
+                    <button key={item.label} onClick={() => openProductsMenu(item.href, item.label)} className="text-left text-sm text-[#111111]">{item.label}</button>
+                  ))}
+                </div>
+              </div>
               {['Best', 'Men', 'Women'].map(item => (
-                <button key={item} className="block text-left text-sm text-[#111111]">
-                  {item}
-                </button>
+                <div key={item}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">{item}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {categoryMenus[item].map(menuItem => (
+                      <button key={menuItem.label} onClick={() => openProductsMenu(menuItem.href, menuItem.label)} className="text-left text-sm text-[#111111]">
+                        {menuItem.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

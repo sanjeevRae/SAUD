@@ -1,9 +1,11 @@
 {
   "/api/customer/cart/route": "app/api/customer/cart/route.js",
-  "/api/admin/cms/route": "app/api/admin/cms/route.js",
-  "/api/admin/products/route": "app/api/admin/products/route.js",
-  "/api/admin/orders/route": "app/api/admin/orders/route.js",
+  "/api/customer/orders/route": "app/api/customer/orders/route.js",
+  "/api/customer/reviews/route": "app/api/customer/reviews/route.js",
+  "/api/customer/activity/route": "app/api/customer/activity/route.js",
+  "/main-product/page": "app/main-product/page.js",
   "/page": "app/page.js",
+  "/product/[id]/page": "app/product/[id]/page.js",
   "/admin/page": "app/admin/page.js",
-  "/admin/insights/page": "app/admin/insights/page.js"
+  "/profile/page": "app/profile/page.js"
 }

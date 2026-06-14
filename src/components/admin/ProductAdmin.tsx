@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Product } from '@/data/products';
 import MediaPicker from '@/components/admin/MediaPicker';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 type Props = { token: string };
 
@@ -21,6 +22,7 @@ const blank: Product = {
 const inputClass = 'border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm outline-none transition focus:border-[#111111]';
 const csv = (value?: string[]) => value?.join(', ') ?? '';
 const list = (value: string) => value.split(',').map(item => item.trim()).filter(Boolean);
+const uniqueImages = (value: string[]) => Array.from(new Set(value.map(item => item.trim()).filter(Boolean))).slice(0, 5);
 const colorsText = (colors?: Product['colors']) => colors?.map(color => `${color.name}:${color.hex}`).join(', ') ?? '';
 const parseColors = (value: string) => list(value).map(item => {
   const [name, hex] = item.split(':').map(part => part.trim());
@@ -31,26 +33,39 @@ function money(value?: number) {
   return `Rs${Number(value || 0).toFixed(2)}`;
 }
 
+function nextProductId(products: Product[]) {
+  const next = products.reduce((highest, product) => {
+    const numeric = Number(product.id);
+    return Number.isInteger(numeric) && numeric > highest ? numeric : highest;
+  }, 0) + 1;
+  return String(next);
+}
+
 export default function ProductAdmin({ token }: Props) {
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Product[]>([]);
   const [form, setForm] = useState<Product>(blank);
   const [sizes, setSizes] = useState('');
-  const [images, setImages] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [colors, setColors] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
   const [status, setStatus] = useState('');
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   const headers = useMemo(() => ({ 'content-type': 'application/json', 'x-admin-token': token }), [token]);
   const selectedId = form.id;
-  const previewImages = list(images);
-  const gallery = previewImages.length ? previewImages : form.image ? [form.image] : [];
+  const generatedId = useMemo(() => nextProductId(items), [items]);
+  const isEditingExisting = items.some(item => item.id === form.id);
+  const gallery = images.length ? images : form.image ? [form.image] : [];
   const parsedColors = parseColors(colors);
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
     const res = await fetch('/api/admin/products', { headers: { 'x-admin-token': token } });
     const data = await res.json();
-    setItems(data.products ?? []);
+    const nextItems = data.products ?? [];
+    setItems(nextItems);
+    setForm(current => current.id ? current : { ...current, id: nextProductId(nextItems) });
     setStatus(res.ok ? '' : data.error || 'Could not load products.');
   }, [token]);
 
@@ -59,30 +74,79 @@ export default function ProductAdmin({ token }: Props) {
   const edit = (product: Product) => {
     setForm(product);
     setSizes(csv(product.sizes));
-    setImages(csv(product.images?.length ? product.images : product.image ? [product.image] : []));
+    setImages(uniqueImages(product.images?.length ? product.images : product.image ? [product.image] : []));
     setColors(colorsText(product.colors));
     setSeoKeywords(csv(product.seoKeywords));
   };
 
   const reset = () => {
-    setForm(blank);
+    setForm({ ...blank, id: generatedId });
     setSizes('');
-    setImages('');
+    setImages([]);
     setColors('');
     setSeoKeywords('');
     setStatus('');
   };
 
+  const addGalleryImage = (url: string) => {
+    setImages(current => uniqueImages([url, ...current]));
+  };
+
+  const removeGalleryImage = (url: string) => {
+    setImages(current => current.filter(image => image !== url));
+    if (form.image === url) {
+      const next = images.find(image => image !== url) || '';
+      setForm(current => ({ ...current, image: next }));
+    }
+  };
+
+  const selectMainImage = (url: string) => {
+    setForm(current => ({ ...current, image: url, ogImage: current.ogImage || url }));
+    addGalleryImage(url);
+  };
+
+  const uploadGalleryFiles = async (files?: FileList | null) => {
+    const selected = Array.from(files ?? []).filter(file => file.type.startsWith('image/'));
+    if (!selected.length) return;
+
+    const slots = Math.max(0, 5 - images.length);
+    if (slots === 0) {
+      setStatus('Gallery already has 5 images. Remove one before adding more.');
+      return;
+    }
+
+    const filesToUpload = selected.slice(0, slots);
+    setGalleryUploading(true);
+    setStatus(`Uploading ${filesToUpload.length} gallery image${filesToUpload.length === 1 ? '' : 's'}...`);
+    try {
+      const uploaded: string[] = [];
+      for (const file of filesToUpload) {
+        const result = await uploadToCloudinary(file, 'chitratech-shop/products');
+        uploaded.push(result.secureUrl);
+      }
+      setImages(current => uniqueImages([...current, ...uploaded]));
+      setForm(current => ({ ...current, image: current.image || uploaded[0] || '', ogImage: current.ogImage || uploaded[0] || '' }));
+      setStatus(selected.length > slots ? `Uploaded ${filesToUpload.length}. Gallery is limited to 5 images.` : 'Gallery images uploaded.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Gallery upload failed.');
+    } finally {
+      setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
   const save = async () => {
-    if (!form.id.trim() || !form.name.trim()) {
+    const productId = form.id.trim() || generatedId;
+    if (!productId || !form.name.trim()) {
       setStatus('Product ID and name are required.');
       return;
     }
 
     setStatus('Saving product...');
-    const imageList = list(images);
+    const imageList = uniqueImages(images);
     const product: Product = {
       ...form,
+      id: productId,
       price: Number(form.price),
       originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
       rating: Number(form.rating),
@@ -95,7 +159,7 @@ export default function ProductAdmin({ token }: Props) {
       seoKeywords: list(seoKeywords),
     };
 
-    const method = items.some(item => item.id === product.id) ? 'PUT' : 'POST';
+    const method = isEditingExisting ? 'PUT' : 'POST';
     const url = method === 'PUT' ? `/api/admin/products/${product.id}` : '/api/admin/products';
     const res = await fetch(url, { method, headers, body: JSON.stringify(product) });
     const data = await res.json().catch(() => ({}));
@@ -175,7 +239,11 @@ export default function ProductAdmin({ token }: Props) {
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-[#333]">Product ID<input value={form.id} onChange={event => setForm({ ...form, id: event.target.value })} className={inputClass} /></label>
+            <label className="grid gap-2 text-sm font-medium text-[#333]">
+              Product ID
+              <input value={form.id || generatedId} readOnly className={`${inputClass} cursor-not-allowed bg-[#f1ede7] text-[#666]`} />
+              <span className="text-xs font-normal text-[#777]">{isEditingExisting ? 'Existing product ID' : 'Auto-generated next product ID'}</span>
+            </label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Name<input value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Category<input value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Tag<input value={form.tag ?? ''} onChange={event => setForm({ ...form, tag: event.target.value })} className={inputClass} /></label>
@@ -196,14 +264,46 @@ export default function ProductAdmin({ token }: Props) {
                 onChange={url => setForm(current => ({ ...current, image: url }))}
                 onUploaded={url => {
                   setForm(current => ({ ...current, image: url, ogImage: current.ogImage || url }));
-                  setImages(current => [url, ...list(current)].join(', '));
+                  addGalleryImage(url);
                 }}
               />
             </div>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Description<textarea value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} className={`${inputClass} min-h-28`} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Sizes<input value={sizes} onChange={event => setSizes(event.target.value)} placeholder="S, M, L, XL" className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Colors<input value={colors} onChange={event => setColors(event.target.value)} placeholder="Olive:#556B2F, Black:#111111" className={inputClass} /></label>
-            <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Gallery image URLs<textarea value={images} onChange={event => setImages(event.target.value)} className={`${inputClass} min-h-24`} /></label>
+            <div className="grid gap-3 text-sm font-medium text-[#333] md:col-span-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p>Gallery images</p>
+                  <p className="mt-1 text-xs font-normal text-[#777]">Select multiple images. Maximum 5 images per product.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => galleryInputRef.current?.click()} disabled={galleryUploading || images.length >= 5} className="border border-[#111] bg-[#111] px-4 py-2 text-xs font-semibold text-white transition hover:bg-white hover:text-[#111] disabled:cursor-not-allowed disabled:border-[#ded8d0] disabled:bg-[#f1ede7] disabled:text-[#999]">
+                    {galleryUploading ? 'Uploading...' : 'Select images'}
+                  </button>
+                  {images.length > 0 && <button type="button" onClick={() => setImages([])} className="border border-[#ded8d0] px-4 py-2 text-xs font-semibold transition hover:border-[#111]">Clear gallery</button>}
+                </div>
+              </div>
+              <input ref={galleryInputRef} type="file" accept="image/*" multiple onChange={event => void uploadGalleryFiles(event.target.files)} className="hidden" />
+              <div className="grid gap-3 sm:grid-cols-5">
+                {images.map((image, index) => (
+                  <div key={image} className={`group relative overflow-hidden border bg-[#f7f3ee] ${form.image === image ? 'border-[#111]' : 'border-[#ded8d0]'}`}>
+                    <button type="button" onClick={() => selectMainImage(image)} className="block aspect-square w-full">
+                      <img src={image} alt={`Gallery image ${index + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/70 px-2 py-1 text-[11px] text-white">
+                      <button type="button" onClick={() => selectMainImage(image)} className="font-semibold">{form.image === image ? 'Main' : 'Set main'}</button>
+                      <button type="button" onClick={() => removeGalleryImage(image)} className="font-semibold text-white/80 hover:text-white">Remove</button>
+                    </div>
+                  </div>
+                ))}
+                {Array.from({ length: Math.max(0, 5 - images.length) }).map((_, index) => (
+                  <button key={`empty-${index}`} type="button" onClick={() => galleryInputRef.current?.click()} disabled={galleryUploading} className="flex aspect-square items-center justify-center border border-dashed border-[#d8d2ca] bg-[#fbfaf8] text-xs font-normal text-[#777] transition hover:border-[#111] disabled:opacity-60">
+                    Add image
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">SEO title<input value={form.seoTitle ?? ''} onChange={event => setForm({ ...form, seoTitle: event.target.value })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">SEO description<textarea value={form.seoDescription ?? ''} onChange={event => setForm({ ...form, seoDescription: event.target.value })} className={`${inputClass} min-h-24`} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">SEO keywords<input value={seoKeywords} onChange={event => setSeoKeywords(event.target.value)} placeholder="fashion, hoodie, streetwear" className={inputClass} /></label>

@@ -10,6 +10,9 @@ export type Customer = {
   name: string;
   photo?: string;
   address?: string;
+  city?: string;
+  area?: string;
+  landmark?: string;
 };
 
 type LoginPayload = { mode: 'login' | 'register'; method: 'email' | 'google' | 'phone'; email?: string; phone?: string; password?: string; name?: string; photo?: string; firebaseUid?: string };

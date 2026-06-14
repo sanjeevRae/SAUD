@@ -12,6 +12,7 @@ export type ProductQuery = {
   q?: string;
   category?: string;
   gender?: string;
+  sort?: string;
   limit?: number;
 };
 
@@ -177,6 +178,24 @@ function normalizeProduct(product: Product): Product {
   };
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function strictIncludes(text: string, term: string) {
+  const normalizedText = normalizeSearchText(text);
+  const normalizedTerm = normalizeSearchText(term);
+  if (!normalizedTerm) return true;
+  if (normalizedText.includes(normalizedTerm)) return true;
+  if (normalizedTerm.endsWith('s') && normalizedText.includes(normalizedTerm.slice(0, -1))) return true;
+  return false;
+}
+
 function filterProducts(items: Product[], query: ProductQuery) {
   const term = query.q?.trim().toLowerCase();
   const category = query.category?.trim().toLowerCase();
@@ -198,14 +217,27 @@ function filterProducts(items: Product[], query: ProductQuery) {
       .join(' ')
       .toLowerCase();
 
-    const matchesTerm = !term || text.includes(term);
-    const matchesCategory = !category || product.category.toLowerCase() === category;
-    const matchesGender = !gender || text.includes(gender);
+    const matchesTerm = !term || strictIncludes(text, term);
+    const normalizedCategory = product.category.toLowerCase();
+    const matchesCategory = !category || normalizedCategory === category || normalizedCategory.replace(/s$/, '') === category.replace(/s$/, '') || text.includes(category);
+    const matchesGender =
+      !gender ||
+      (gender === 'men' && /\bmen'?s\b|\bmale\b/.test(text)) ||
+      (gender === 'women' && /\bwomen'?s\b|\bfemale\b/.test(text)) ||
+      (gender === 'kids' && /\bkids?\b|\bchildren\b|\bboys?\b|\bgirls?\b/.test(text));
 
     return matchesTerm && matchesCategory && matchesGender;
   });
 
-  return typeof query.limit === 'number' ? filtered.slice(0, query.limit) : filtered;
+  const sorted = [...filtered].sort((a, b) => {
+    if (query.sort === 'top-selling') return Number(b.reviewCount || 0) + Number(b.rating || 0) * 20 - (Number(a.reviewCount || 0) + Number(a.rating || 0) * 20);
+    if (query.sort === 'trending') return Number(Boolean(b.tag)) - Number(Boolean(a.tag)) || Number(b.rating || 0) - Number(a.rating || 0);
+    if (query.sort === 'newest') return Number(b.featuredOrder ?? b.id) - Number(a.featuredOrder ?? a.id);
+    if (query.sort === 'loved') return Number(b.rating || 0) - Number(a.rating || 0) || Number(b.reviewCount || 0) - Number(a.reviewCount || 0);
+    return 0;
+  });
+
+  return typeof query.limit === 'number' ? sorted.slice(0, query.limit) : sorted;
 }
 
 export async function getProductsByQuery(query: ProductQuery = {}) {

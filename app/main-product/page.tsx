@@ -1,4 +1,4 @@
-import MainProduct from '@/pages/MainProduct';
+import MainProduct from '@/views/MainProduct';
 import { getProductsByQuery } from '@/lib/storefront';
 
 type MainProductRouteProps = {

@@ -150,7 +150,8 @@ export default function Navbar({ notices = [] }: NavbarProps) {
         const params = new URLSearchParams({ limit: '6' });
         const query = searchQuery.trim();
         if (query) params.set('q', query);
-        const response = await fetch(`/api/products/search?${params.toString()}`, { signal: controller.signal });
+        params.set('action', 'search');
+        const response = await fetch(`/api/products?${params.toString()}`, { signal: controller.signal });
         const data = await response.json();
         setSearchResults(data.products ?? []);
       } catch (error) {

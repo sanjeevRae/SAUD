@@ -1,6 +1,6 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import ProductDetail from '@/pages/ProductDetail';
+import ProductDetail from '@/views/ProductDetail';
 import { getProductById, getProductsByQuery } from '@/lib/storefront';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

@@ -265,7 +265,7 @@ export default function InsightDashboard({ token }: { token: string }) {
 
   const load = useCallback(async () => {
     setStatus('Loading orders...');
-    const response = await fetch('/api/admin/orders', { headers: { 'x-admin-token': token } });
+    const response = await fetch('/api/admin?action=orders', { headers: { 'x-admin-token': token } });
     const data = await response.json().catch(() => ({}));
     setOrders(data.orders ?? []);
     setStatus(response.ok ? '' : data.error || 'Could not load orders.');
@@ -313,7 +313,7 @@ export default function InsightDashboard({ token }: { token: string }) {
     if (order.status === nextStatus) return;
     setUpdatingId(order.id);
     setStatus(`Updating ${order.id}...`);
-    const response = await fetch('/api/admin/orders', {
+    const response = await fetch('/api/admin?action=orders', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', 'x-admin-token': token },
       body: JSON.stringify({ id: order.id, status: nextStatus }),

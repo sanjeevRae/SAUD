@@ -1,4 +1,4 @@
-﻿import ProfileDashboard from '@/pages/ProfileDashboard';
+import ProfileDashboard from '@/views/ProfileDashboard';
 
 export default function ProfilePage() {
   return <ProfileDashboard />;

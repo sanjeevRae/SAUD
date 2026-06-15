@@ -1,4 +1,5 @@
 {
-  "/api/customer/cart/route": "app/api/customer/cart/route.js",
-  "/page": "app/page.js"
+  "/api/customer/route": "app/api/customer/route.js",
+  "/page": "app/page.js",
+  "/main-product/page": "app/main-product/page.js"
 }

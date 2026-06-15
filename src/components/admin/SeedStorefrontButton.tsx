@@ -18,7 +18,7 @@ export default function SeedStorefrontButton({ token }: { token: string }) {
     setLoading(true);
     setResult(null);
     try {
-      const response = await fetch('/api/admin/seed', { method: 'POST', headers: { 'x-admin-token': token } });
+      const response = await fetch('/api/admin?action=seed', { method: 'POST', headers: { 'x-admin-token': token } });
       const data = await response.json();
       setResult(response.ok ? data : { error: data.error || 'Seed failed.' });
     } catch (error) {

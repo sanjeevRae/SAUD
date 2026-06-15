@@ -11,10 +11,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/api/customer/cart/route": [
+    "/api/customer/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/customer/cart/route.js"
+      "static/chunks/app/api/customer/route.js"
+    ],
+    "/main-product/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/main-product/page.js"
     ]
   }
 }

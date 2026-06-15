@@ -17,7 +17,7 @@ export default function ProductDashboard({ token }: Props) {
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
-    const response = await fetch('/api/admin/products', { headers: { 'x-admin-token': token } });
+    const response = await fetch('/api/admin?action=products', { headers: { 'x-admin-token': token } });
     const data = await response.json().catch(() => ({}));
     setItems(data.products ?? []);
     setStatus(response.ok ? '' : data.error || 'Could not load products.');

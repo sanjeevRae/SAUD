@@ -51,7 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const trackActivity = useCallback((type: string, data: Record<string, unknown> = {}) => {
     if (!user) return;
-    void fetch('/api/customer/activity', {
+    void fetch('/api/customer?action=activity', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ user, type, data, path: window.location.pathname + window.location.search }),
@@ -74,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     window.localStorage.setItem(cartKey(user.id), JSON.stringify(items));
-    void fetch('/api/customer/cart', {
+    void fetch('/api/customer?action=cart', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ user, items: compactItems(items), totalItems, totalPrice }),
@@ -123,7 +123,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     if (!items.length) return;
     setCheckoutStatus('Placing Cash on Delivery order...');
-    const response = await fetch('/api/customer/checkout', {
+    const response = await fetch('/api/customer?action=checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ user, items: compactItems(items), subtotal: totalPrice, ...details }),

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Cart from '@/pages/Cart';
+import Cart from '@/views/Cart';
 
 export const metadata: Metadata = {
   title: 'Cart | ChitraTech Shop',

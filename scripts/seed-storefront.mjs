@@ -22,8 +22,8 @@ function loadEnv() {
 async function loadStoreData() {
   const file = await readFile(path.join(process.cwd(), 'src/data/products.ts'), 'utf8');
   const output = ts.transpileModule(file, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const module = { exports: {} };
-  const sandbox = { exports: module.exports, module };
+  const productModule = { exports: {} };
+  const sandbox = { exports: productModule.exports, module: productModule };
   vm.runInNewContext(output, sandbox, { filename: 'products.ts' });
   return sandbox.module.exports;
 }

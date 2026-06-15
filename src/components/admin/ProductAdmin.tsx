@@ -61,7 +61,7 @@ export default function ProductAdmin({ token }: Props) {
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
-    const res = await fetch('/api/admin/products', { headers: { 'x-admin-token': token } });
+    const res = await fetch('/api/admin?action=products', { headers: { 'x-admin-token': token } });
     const data = await res.json();
     const nextItems = data.products ?? [];
     setItems(nextItems);
@@ -160,8 +160,8 @@ export default function ProductAdmin({ token }: Props) {
     };
 
     const method = isEditingExisting ? 'PUT' : 'POST';
-    const url = method === 'PUT' ? `/api/admin/products/${product.id}` : '/api/admin/products';
-    const res = await fetch(url, { method, headers, body: JSON.stringify(product) });
+    const payload = isEditingExisting ? { ...product, id: product.id } : product;
+    const res = await fetch('/api/admin?action=products', { method, headers, body: JSON.stringify(payload) });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Saved. Product data is now stored in Firestore.' : data.error || 'Save failed.');
     if (res.ok) await load();
@@ -170,7 +170,7 @@ export default function ProductAdmin({ token }: Props) {
   const remove = async (id: string) => {
     if (!confirm('Delete this product?')) return;
     setStatus('Deleting product...');
-    const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: { 'x-admin-token': token } });
+    const res = await fetch(`/api/admin?action=products&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-admin-token': token } });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Deleted.' : data.error || 'Delete failed.');
     if (res.ok) await load();

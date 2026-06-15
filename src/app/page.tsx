@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Home from '@/pages/Home';
+import Home from '@/views/Home';
 import { getHomepageConfig } from '@/lib/storefront';
 
 export const metadata: Metadata = {

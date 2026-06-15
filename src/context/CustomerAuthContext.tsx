@@ -52,7 +52,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (payload: LoginPayload) => {
     setAuthStatus('Please wait...');
-    const response = await fetch('/api/customer/account', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+    const response = await fetch('/api/customer?action=account', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await response.json();
     if (!response.ok) {
       setAuthStatus(data.error || 'Login failed.');
@@ -66,7 +66,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = useCallback(async (profile: Partial<Customer>) => {
     if (!user) return;
     setAuthStatus('Saving profile...');
-    const response = await fetch('/api/customer/account', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...profile, id: user.id }) });
+    const response = await fetch('/api/customer?action=account', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...profile, id: user.id }) });
     const data = await response.json();
     if (!response.ok) {
       setAuthStatus(data.error || 'Profile update failed.');

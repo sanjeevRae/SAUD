@@ -15,6 +15,7 @@ type FirestoreValue =
 
 const tokenUrl = 'https://oauth2.googleapis.com/token';
 const scope = 'https://www.googleapis.com/auth/datastore';
+const adminFetchTimeoutMs = Number(process.env.FIRESTORE_ADMIN_TIMEOUT_MS ?? 5000);
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 function base64url(input: Buffer | string) {
@@ -31,6 +32,10 @@ function requiredEnv() {
   }
 
   return { projectId, clientEmail, privateKey, databaseId: process.env.FIRESTORE_DATABASE_ID || '(default)' };
+}
+
+function adminSignal() {
+  return AbortSignal.timeout(adminFetchTimeoutMs);
 }
 
 async function getAccessToken() {
@@ -56,6 +61,7 @@ async function getAccessToken() {
   const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    signal: adminSignal(),
     body: new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion,
@@ -99,6 +105,7 @@ export async function createProduct(product: Product) {
   const response = await fetch(`${baseUrl()}?documentId=${encodeURIComponent(product.id)}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    signal: adminSignal(),
     body: JSON.stringify({ fields: productFields(product) }),
   });
   if (!response.ok) throw new Error(await response.text());
@@ -109,6 +116,7 @@ export async function updateProduct(product: Product) {
   const response = await fetch(`${baseUrl()}/${encodeURIComponent(product.id)}`, {
     method: 'PATCH',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    signal: adminSignal(),
     body: JSON.stringify({ fields: productFields(product) }),
   });
   if (!response.ok) throw new Error(await response.text());
@@ -119,6 +127,7 @@ export async function deleteProduct(id: string) {
   const response = await fetch(`${baseUrl()}/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
+    signal: adminSignal(),
   });
   if (!response.ok) throw new Error(await response.text());
 }
@@ -152,7 +161,7 @@ function docId(name: string) {
 
 export async function listDocuments<T extends PlainRecord>(collectionPath: string) {
   const token = await getAccessToken();
-  const response = await fetch(documentsBaseUrl(collectionPath), { headers: { authorization: `Bearer ${token}` } });
+  const response = await fetch(documentsBaseUrl(collectionPath), { headers: { authorization: `Bearer ${token}` }, signal: adminSignal() });
   if (!response.ok) throw new Error(await response.text());
   const payload = await response.json() as { documents?: { name: string; fields?: Record<string, FirestoreValue> }[] };
   return (payload.documents ?? []).map(document => ({
@@ -166,6 +175,7 @@ export async function saveDocument(collectionPath: string, id: string, data: Pla
   const response = await fetch(`${documentsBaseUrl(collectionPath)}/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    signal: adminSignal(),
     body: JSON.stringify({ fields: toPlainFields(data) }),
   });
   if (!response.ok) throw new Error(await response.text());
@@ -176,6 +186,7 @@ export async function removeDocument(collectionPath: string, id: string) {
   const response = await fetch(`${documentsBaseUrl(collectionPath)}/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: { authorization: `Bearer ${token}` },
+    signal: adminSignal(),
   });
   if (!response.ok) throw new Error(await response.text());
 }
@@ -183,6 +194,7 @@ export async function getDocument<T extends PlainRecord>(collectionPath: string,
   const token = await getAccessToken();
   const response = await fetch(`${documentsBaseUrl(collectionPath)}/${encodeURIComponent(id)}`, {
     headers: { authorization: `Bearer ${token}` },
+    signal: adminSignal(),
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(await response.text());

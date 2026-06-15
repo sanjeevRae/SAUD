@@ -187,7 +187,7 @@ export default function ProductAdmin({ token }: Props) {
             <p className="mt-2 text-sm text-[#666666]">Create, edit, preview, upload images, and publish product data to Firestore.</p>
           </div>
           <div className="flex flex-col gap-3">
-            <Link href={`/admin/products?token=${encodeURIComponent(token)}`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em] text-white shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition hover:bg-white hover:text-[#111]">
+            <Link href={`/admin?token=${encodeURIComponent(token)}#products`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em] text-white shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition hover:bg-white hover:text-[#111]">
               View all products
             </Link>
             <div className="grid grid-cols-3 border border-[#ded8d0] bg-[#faf8f5] text-center">

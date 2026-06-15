@@ -53,8 +53,8 @@ export default function AdminPage() {
             </div>
             <div className="flex gap-3">
               <Link href="/" className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View shop</Link>
-              <Link href={`/admin/insights?token=${encodeURIComponent(token)}`} className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
-              <Link href="/main-product" className="bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#f1d9df]">Products</Link>
+              <Link href="#insights" className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
+              <Link href="#products" className="bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#f1d9df]">Products</Link>
             </div>
           </div>
 
@@ -89,8 +89,17 @@ export default function AdminPage() {
         </section>
 
         <div className="mt-8 space-y-8">
+          <div id="insights" className="border border-[#e2ddd6] bg-white p-5 shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">Insights</p>
+            <p className="mt-2 text-sm leading-6 text-[#555555]">Orders analytics remain available, but use the main admin page links to avoid extra deployment functions on Vercel Hobby.</p>
+            <Link href={`/admin/insights?token=${encodeURIComponent(token)}`} className="mt-4 inline-flex border border-[#ded8d0] bg-white px-4 py-2 text-sm font-semibold text-[#111] transition hover:border-[#111]">
+              Open legacy insights page
+            </Link>
+          </div>
           <CmsAdmin token={token} />
-          <ProductAdmin token={token} />
+          <div id="products">
+            <ProductAdmin token={token} />
+          </div>
         </div>
       </div>
     </main>

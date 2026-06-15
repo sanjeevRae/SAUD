@@ -1,0 +1,9 @@
+# Firebase App Hosting configuration for the Next.js app in /app
+# App Hosting will detect Next.js automatically and build/deploy with server support.
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80

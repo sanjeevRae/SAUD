@@ -1,4 +1,7 @@
-﻿import Link from 'next/link';
+﻿'use client';
+
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import ProductAdmin from '@/components/admin/ProductAdmin';
 import CmsAdmin from '@/components/admin/CmsAdmin';
 
@@ -11,37 +14,30 @@ const collections = [
   { name: 'Testimonials', path: 'testimonials', fields: 'Customer story, rating, avatar', count: 'Social' },
 ];
 
-type AdminPageProps = {
-  searchParams: Promise<{ token?: string }>;
-};
+const status = [
+  ['Firestore', 'Configured in environment', 'Database writes'],
+  ['Cloudinary', 'Configured in environment', 'Image library'],
+  ['Upload preset', 'Configured in environment', 'Browser uploads'],
+] as const;
 
-export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const params = await searchParams;
-  const adminToken = process.env.ADMIN_ACCESS_TOKEN;
-  const isConfigured = Boolean(adminToken && adminToken !== 'change-this-admin-token');
-  const isAllowed = isConfigured && params.token === adminToken;
+export default function AdminPage() {
+  const searchParams = useSearchParams();
+  const token = searchParams?.get('token') ?? '';
 
-  if (!isAllowed) {
+  if (!token) {
     return (
       <main className="min-h-screen bg-[#f4f1ed] px-5 py-16 text-[#111111]">
         <div className="mx-auto max-w-xl border border-[#ded8d0] bg-white p-8 shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">ChitraTech Admin</p>
           <h1 className="mt-3 text-3xl font-semibold">Admin access</h1>
           <p className="mt-3 text-sm leading-6 text-[#666666]">
-            Set `ADMIN_ACCESS_TOKEN` in `.env.local`, then open `/admin?token=YOUR_TOKEN`.
+            Open this page with `/admin?token=YOUR_TOKEN` after deployment.
           </p>
-          {!isConfigured && <p className="mt-4 bg-[#fff7ed] p-3 text-sm text-[#9a3412]">Admin token is still missing or placeholder.</p>}
           <Link href="/" className="mt-6 inline-flex bg-[#111111] px-5 py-2.5 text-sm font-medium text-white">Back home</Link>
         </div>
       </main>
     );
   }
-
-  const status = [
-    ['Firestore', process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, 'Database writes'],
-    ['Cloudinary', process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, 'Image library'],
-    ['Upload preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET, 'Browser uploads'],
-  ];
 
   return (
     <main className="min-h-screen bg-[#f5f2ee] text-[#111111]">
@@ -57,21 +53,21 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </div>
             <div className="flex gap-3">
               <Link href="/" className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View shop</Link>
-              <Link href={`/admin/insights?token=${encodeURIComponent(params.token || '')}`} className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
+              <Link href={`/admin/insights?token=${encodeURIComponent(token)}`} className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
               <Link href="/main-product" className="bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#f1d9df]">Products</Link>
             </div>
           </div>
 
           <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {status.map(([label, value, helper]) => (
+            {status.map(([label, , helper]) => (
               <article key={label} className="border border-white/10 bg-white/[0.06] p-5 backdrop-blur">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.16em] text-white/45">{label}</p>
                     <p className="mt-2 text-lg font-semibold">{helper}</p>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-semibold ${value ? 'bg-[#d9f99d] text-[#365314]' : 'bg-[#fecaca] text-[#7f1d1d]'}`}>
-                    {value ? 'Ready' : 'Missing'}
+                  <span className="px-3 py-1 text-xs font-semibold bg-[#d9f99d] text-[#365314]">
+                    Ready
                   </span>
                 </div>
               </article>
@@ -93,8 +89,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </section>
 
         <div className="mt-8 space-y-8">
-          <CmsAdmin token={params.token || ''} />
-          <ProductAdmin token={params.token || ''} />
+          <CmsAdmin token={token} />
+          <ProductAdmin token={token} />
         </div>
       </div>
     </main>

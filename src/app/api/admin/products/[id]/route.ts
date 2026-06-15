@@ -3,6 +3,8 @@ import type { Product } from '@/data/products';
 import { assertAdmin } from '@/lib/adminAuth';
 import { deleteProduct, updateProduct } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const denied = assertAdmin(request);
   if (denied) return denied;

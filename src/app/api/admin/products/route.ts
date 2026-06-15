@@ -4,6 +4,8 @@ import { assertAdmin } from '@/lib/adminAuth';
 import { createProduct } from '@/lib/firestoreAdmin';
 import { getProductsByQuery } from '@/lib/storefront';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const denied = assertAdmin(request);
   if (denied) return denied;

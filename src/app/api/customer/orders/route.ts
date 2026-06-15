@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listDocuments } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const userId = String(request.nextUrl.searchParams.get('userId') || '').trim();

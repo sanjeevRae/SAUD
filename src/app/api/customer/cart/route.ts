@@ -1,6 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { saveDocument } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 function userPath(userId: string, suffix: string) {
   return `customers/${encodeURIComponent(userId)}/${suffix}`;
 }

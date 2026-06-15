@@ -2,6 +2,8 @@
 import { createHash } from 'crypto';
 import { getDocument, saveDocument } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 type CustomerRecord = Record<string, string | number | boolean | null | string[] | undefined>;
 
 function normalize(value: string) {

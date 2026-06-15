@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocument, listDocuments, removeDocument, saveDocument } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 type OrderItem = { id?: string; name?: string };
 type CustomerOrder = {
   id: string;

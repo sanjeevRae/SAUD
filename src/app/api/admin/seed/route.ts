@@ -7,6 +7,8 @@ import { categories, collections, products, testimonials } from '@/data/products
 import type { Product } from '@/data/products';
 import type { HeroBanner } from '@/lib/storefront';
 
+export const dynamic = 'force-dynamic';
+
 type SeedRecord = Record<string, string | number | boolean | null | SeedRecord[] | string[] | number[] | boolean[] | undefined>;
 
 const heroBanners: HeroBanner[] = [

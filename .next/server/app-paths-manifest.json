@@ -1,11 +1,4 @@
 {
   "/api/customer/cart/route": "app/api/customer/cart/route.js",
-  "/api/customer/orders/route": "app/api/customer/orders/route.js",
-  "/api/customer/reviews/route": "app/api/customer/reviews/route.js",
-  "/api/customer/activity/route": "app/api/customer/activity/route.js",
-  "/main-product/page": "app/main-product/page.js",
-  "/page": "app/page.js",
-  "/product/[id]/page": "app/product/[id]/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/profile/page": "app/profile/page.js"
+  "/page": "app/page.js"
 }

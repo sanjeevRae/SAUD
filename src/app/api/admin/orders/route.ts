@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { assertAdmin } from '@/lib/adminAuth';
 import { getDocument, listDocuments, saveDocument } from '@/lib/firestoreAdmin';
 
+export const dynamic = 'force-dynamic';
+
 const allowedStatuses = ['pending_cod', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
 
 export async function GET(request: NextRequest) {

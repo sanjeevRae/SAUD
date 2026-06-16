@@ -3,6 +3,10 @@ import { assertAdmin } from '@/lib/adminAuth';
 import { createProduct, deleteProduct, getDocument, listDocuments, removeDocument, saveDocument, updateProduct } from '@/lib/firestoreAdmin';
 import type { Product } from '@/data/products';
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+type PlainRecord = Record<string, JsonValue | undefined>;
+
 type OrderItem = {
   id?: string;
   name?: string;
@@ -85,21 +89,21 @@ async function updateOrder(request: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  await saveDocument('orders', payload.id, order as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument('orders', payload.id, order);
   return NextResponse.json({ ok: true, order });
 }
 
 async function getCms(request: NextRequest) {
   const path = request.nextUrl.searchParams.get('path');
   if (!path) return jsonError('CMS path is required.');
-  const items = await listDocuments<Record<string, unknown>>(path);
+  const items = await listDocuments<PlainRecord>(path);
   return NextResponse.json({ items });
 }
 
 async function putCms(request: NextRequest) {
-  const payload = await request.json() as { path?: string; id?: string; data?: Record<string, unknown> };
+  const payload = await request.json() as { path?: string; id?: string; data?: PlainRecord };
   if (!payload.path || !payload.id || !payload.data) return jsonError('CMS path, id, and data are required.');
-  await saveDocument(payload.path, payload.id, payload.data as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument(payload.path, payload.id, payload.data);
   return NextResponse.json({ ok: true, id: payload.id });
 }
 

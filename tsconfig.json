@@ -3,7 +3,6 @@
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "es2022"],
     "allowJs": false,
-    "ignoreDeprecations": "5.0",
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,

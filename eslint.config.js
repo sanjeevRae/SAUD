@@ -22,6 +22,7 @@ export default defineConfig([
     rules: {
       'react-hooks/purity': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      '@next/next/no-img-element': 'off',
     },
   },
 ])

@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getDocument, listDocuments, saveDocument, removeDocument } from '@/lib/firestoreAdmin';
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
 type CustomerAccount = {
   id: string;
   method: 'email' | 'google' | 'phone';
@@ -73,7 +76,8 @@ function jsonError(message: string, status = 400) {
 }
 
 function sanitizeUser(account: CustomerAccount) {
-  const { password: _password, ...user } = account;
+  const user = { ...account };
+  delete user.password;
   return user;
 }
 
@@ -107,7 +111,7 @@ async function upsertAccount(payload: LoginPayload) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      await saveDocument('customers', id, account as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+      await saveDocument('customers', id, account);
       return sanitizeUser(account);
     }
 
@@ -121,7 +125,7 @@ async function upsertAccount(payload: LoginPayload) {
       firebaseUid: payload.firebaseUid || existing.firebaseUid,
       updatedAt: new Date().toISOString(),
     };
-    await saveDocument('customers', id, merged as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+    await saveDocument('customers', id, merged);
     return sanitizeUser(merged);
   }
 
@@ -142,7 +146,7 @@ async function upsertAccount(payload: LoginPayload) {
     updatedAt: new Date().toISOString(),
   };
 
-  await saveDocument('customers', id, account as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument('customers', id, account);
   return sanitizeUser(account);
 }
 
@@ -159,7 +163,7 @@ async function updateAccount(request: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  await saveDocument('customers', payload.id, account as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument('customers', payload.id, account);
   return NextResponse.json({ user: sanitizeUser(account) });
 }
 
@@ -192,12 +196,12 @@ async function saveCart(request: NextRequest) {
     totalItems: payload.totalItems,
     totalPrice: payload.totalPrice,
     updatedAt: new Date().toISOString(),
-  } as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  });
   return NextResponse.json({ ok: true });
 }
 
 async function saveActivity(request: NextRequest) {
-  const payload = await request.json() as { user?: CustomerAccount; type?: string; data?: Record<string, unknown>; path?: string };
+  const payload = await request.json() as { user?: CustomerAccount; type?: string; data?: JsonValue; path?: string };
   if (!payload.user?.id || !payload.type) return jsonError('Customer activity payload is invalid.');
   const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   await saveDocument('customerActivity', id, {
@@ -206,7 +210,7 @@ async function saveActivity(request: NextRequest) {
     data: payload.data,
     path: payload.path,
     createdAt: new Date().toISOString(),
-  } as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  });
   return NextResponse.json({ ok: true });
 }
 
@@ -250,14 +254,14 @@ async function checkout(request: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  await saveDocument('orders', orderId, order as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument('orders', orderId, order);
   await saveDocument('customerCarts', payload.user.id, {
     userId: payload.user.id,
     items: [],
     totalItems: 0,
     totalPrice: 0,
     updatedAt: new Date().toISOString(),
-  } as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  });
 
   return NextResponse.json({ ok: true, order });
 }
@@ -287,7 +291,7 @@ async function createOrUpdateReview(request: NextRequest) {
     updatedAt: new Date().toISOString(),
   };
 
-  await saveDocument('reviews', id, review as unknown as Record<string, string | number | boolean | null | undefined | string[] | Record<string, unknown>>);
+  await saveDocument('reviews', id, review);
   return NextResponse.json({ ok: true, review });
 }
 

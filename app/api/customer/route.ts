@@ -52,6 +52,7 @@ type ProductReview = {
   id: string;
   userId?: string;
   userName?: string;
+  userPhoto?: string;
   productId?: string;
   productName?: string;
   rating?: number;
@@ -283,6 +284,7 @@ async function createOrUpdateReview(request: NextRequest) {
     id,
     userId: payload.user.id,
     userName: payload.user.name,
+    userPhoto: payload.user.photo,
     productId: payload.productId,
     productName: payload.productName,
     rating: Number(payload.rating || 5),

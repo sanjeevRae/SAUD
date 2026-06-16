@@ -46,6 +46,7 @@ type ProductReview = {
   id: string;
   productId?: string;
   productName?: string;
+  userPhoto?: string;
   rating?: number;
   text?: string;
   createdAt?: string;

@@ -221,7 +221,11 @@ export default function ProductAdmin({ token }: Props) {
             {items.length === 0 && <p className="border border-dashed border-[#d8d2ca] p-5 text-sm text-[#777]">No products found.</p>}
             {items.map(product => (
               <button key={product.id} onClick={() => edit(product)} className={`flex items-center gap-3 border p-3 text-left transition ${selectedId === product.id ? 'border-[#111111] bg-[#f8f5f0]' : 'border-[#ebe6df] hover:border-[#c8beb4]'}`}>
-                <img src={product.image} alt="" className="h-16 w-16 bg-[#eee9e2] object-cover" />
+                {product.image ? (
+                  <img src={product.image} alt="" className="h-16 w-16 bg-[#eee9e2] object-cover" />
+                ) : (
+                  <span className="flex h-16 w-16 items-center justify-center bg-[#eee9e2] text-xs font-semibold text-[#777]">No image</span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{product.name}</span>
                   <span className="mt-1 block truncate text-xs text-[#777]">{product.category} / {money(product.price)}</span>

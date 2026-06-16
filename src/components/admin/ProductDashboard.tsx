@@ -84,7 +84,13 @@ export default function ProductDashboard({ token }: Props) {
                 const stock = Number(product.stock || 0);
                 return (
                   <tr key={product.id} className="border-b border-[#eee8e1] last:border-b-0 hover:bg-[#faf8f5]">
-                    <td className="px-4 py-3"><img src={product.image} alt="" className="h-14 w-14 bg-[#eee9e2] object-cover" /></td>
+                    <td className="px-4 py-3">
+                      {product.image ? (
+                        <img src={product.image} alt="" className="h-14 w-14 bg-[#eee9e2] object-cover" />
+                      ) : (
+                        <span className="flex h-14 w-14 items-center justify-center bg-[#eee9e2] text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777]">No image</span>
+                      )}
+                    </td>
                     <td className="max-w-[260px] px-4 py-3"><p className="font-semibold text-[#111]">{product.name}</p><p className="mt-1 text-xs text-[#777]">ID: {product.id}</p></td>
                     <td className="px-4 py-3">{product.category}</td>
                     <td className="px-4 py-3 font-semibold">{money(product.price)}</td>

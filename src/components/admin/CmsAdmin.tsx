@@ -131,9 +131,16 @@ export default function CmsAdmin({ token }: { token: string }) {
             {items.length === 0 && <p className="border border-dashed border-[#d8d2ca] p-5 text-sm text-[#777]">No saved items yet. A draft is ready in the editor.</p>}
             {items.map(item => {
               const id = String(item.id);
+              const itemImage = imageValue(item);
               return (
                 <button key={id} onClick={() => setForm(item)} className={`flex items-center gap-3 border p-3 text-left transition ${selectedId === id ? 'border-[#111111] bg-[#f8f5f0]' : 'border-[#ebe6df] hover:border-[#c8beb4]'}`}>
-                  {config.key === 'notice' ? <span className="flex h-16 w-16 items-center justify-center bg-[#111] text-xs font-semibold text-white">Notice</span> : <img src={imageValue(item)} alt="" className="h-16 w-16 bg-[#eee9e2] object-cover" />}
+                  {config.key === 'notice' ? (
+                    <span className="flex h-16 w-16 items-center justify-center bg-[#111] text-xs font-semibold text-white">Notice</span>
+                  ) : itemImage ? (
+                    <img src={itemImage} alt="" className="h-16 w-16 bg-[#eee9e2] object-cover" />
+                  ) : (
+                    <span className="flex h-16 w-16 items-center justify-center bg-[#eee9e2] text-xs font-semibold text-[#777]">No image</span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{textValue(item, ['title', 'name', 'id'])}</span>
                     <span className="mt-1 block truncate text-xs text-[#777]">{id}</span>

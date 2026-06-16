@@ -15,6 +15,7 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
+    "rootDirs": [".", "./app", "./src"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
@@ -23,9 +24,7 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
     "node_modules",
-    "app/**/*",
-    "src/app/api/admin/cms/**/*",
-    "src/app/api/admin/seed/**/*",
+    "src/app/**/*",
     "src/App.tsx",
     "src/main.tsx",
     "vite.config.ts",

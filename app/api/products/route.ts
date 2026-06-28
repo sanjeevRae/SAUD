@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listDocuments } from '@/lib/firestoreAdmin';
+import { queryDocuments } from '@/lib/firestoreAdmin';
 import { getProductsByQuery } from '@/lib/storefront';
 
 export const dynamic = 'force-dynamic';
@@ -33,9 +33,8 @@ export async function GET(request: NextRequest) {
       const productId = String(request.nextUrl.searchParams.get('productId') || '').trim();
       if (!productId) return NextResponse.json({ error: 'Missing product id.' }, { status: 400 });
 
-      const reviews = await listDocuments<PlainRecord>('reviews');
+      const reviews = await queryDocuments<PlainRecord>('reviews', [{ field: 'productId', value: productId }]);
       const filtered = reviews
-        .filter(review => String(review.productId || '') === productId)
         .sort((a, b) => new Date(String(b.createdAt || 0)).getTime() - new Date(String(a.createdAt || 0)).getTime());
 
       return NextResponse.json({ reviews: filtered });

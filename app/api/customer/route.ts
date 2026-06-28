@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getDocument, listDocuments, saveDocument, removeDocument } from '@/lib/firestoreAdmin';
+import { getDocument, queryDocuments, saveDocument, removeDocument } from '@/lib/firestoreAdmin';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -183,9 +183,8 @@ async function updateAccount(request: NextRequest) {
 async function getOrders(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return jsonError('User id is required.');
-  const orders = await listDocuments<CustomerOrder>('orders');
+  const orders = await queryDocuments<CustomerOrder>('orders', [{ field: 'user.id', value: userId }]);
   const filtered = orders
-    .filter(order => order.user?.id === userId)
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
   return NextResponse.json({ orders: filtered });
 }
@@ -193,9 +192,8 @@ async function getOrders(request: NextRequest) {
 async function getReviews(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return jsonError('User id is required.');
-  const reviews = await listDocuments<ProductReview>('reviews');
+  const reviews = await queryDocuments<ProductReview>('reviews', [{ field: 'userId', value: userId }]);
   const filtered = reviews
-    .filter(review => review.userId === userId)
     .sort((a, b) => String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || '')));
   return NextResponse.json({ reviews: filtered });
 }

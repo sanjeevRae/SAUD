@@ -75,11 +75,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     window.localStorage.setItem(cartKey(user.id), JSON.stringify(items));
-    void fetch('/api/customer?action=cart', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ user, items: compactItems(items), totalItems, totalPrice }),
-    });
+    const timer = window.setTimeout(() => {
+      void fetch('/api/customer?action=cart', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ user, items: compactItems(items), totalItems, totalPrice }),
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
   }, [items, totalItems, totalPrice, user]);
 
   const addToCart = useCallback((product: Product, quantity = 1, selectedSize?: string) => {

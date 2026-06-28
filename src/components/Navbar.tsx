@@ -143,14 +143,21 @@ export default function Navbar({ notices = [] }: NavbarProps) {
   useEffect(() => {
     if (!isSearchOpen) return;
 
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery.length > 0 && trimmedQuery.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError('');
+      return;
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setIsSearching(true);
       setSearchError('');
       try {
         const params = new URLSearchParams({ limit: '6' });
-        const query = searchQuery.trim();
-        if (query) params.set('q', query);
+        if (trimmedQuery) params.set('q', trimmedQuery);
         params.set('action', 'search');
         const response = await fetch(`/api/products?${params.toString()}`, { signal: controller.signal });
         const data = await response.json();
@@ -163,7 +170,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
       } finally {
         if (!controller.signal.aborted) setIsSearching(false);
       }
-    }, 180);
+    }, 280);
 
     return () => {
       controller.abort();

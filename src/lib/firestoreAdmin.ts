@@ -133,6 +133,12 @@ export async function deleteProduct(id: string) {
 }
 type PlainRecord = Record<string, JsonValue | undefined>;
 
+type QueryFilter = {
+  field: string;
+  op?: 'EQUAL';
+  value: JsonValue;
+};
+
 export function toPlainFields(data: PlainRecord) {
   return Object.fromEntries(
     Object.entries(data).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => [key, toFirestoreValue(value as JsonValue)]),
@@ -168,6 +174,50 @@ export async function listDocuments<T extends PlainRecord>(collectionPath: strin
     id: docId(document.name),
     ...Object.fromEntries(Object.entries(document.fields ?? {}).map(([key, value]) => [key, fromFirestoreValue(value)])),
   })) as unknown as T[];
+}
+
+export async function queryDocuments<T extends PlainRecord>(collectionPath: string, filters: QueryFilter[]) {
+  const token = await getAccessToken();
+  const { projectId, databaseId } = requiredEnv();
+
+  const buildFieldFilter = (filter: QueryFilter) => ({
+    fieldFilter: {
+      field: { fieldPath: filter.field },
+      op: filter.op || 'EQUAL',
+      value: toFirestoreValue(filter.value as JsonValue),
+    },
+  });
+
+  const structuredQuery = filters.length === 1
+    ? {
+        from: [{ collectionId: collectionPath.split('/').pop() || collectionPath }],
+        where: buildFieldFilter(filters[0]),
+      }
+    : {
+        from: [{ collectionId: collectionPath.split('/').pop() || collectionPath }],
+        where: {
+          compositeFilter: {
+            op: 'AND',
+            filters: filters.map(buildFieldFilter),
+          },
+        },
+      };
+
+  const response = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents:runQuery`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    signal: adminSignal(),
+    body: JSON.stringify({ structuredQuery }),
+  });
+
+  if (!response.ok) throw new Error(await response.text());
+  const payload = await response.json() as Array<{ document?: { name: string; fields?: Record<string, FirestoreValue> } }>;
+  return payload
+    .filter(item => item.document)
+    .map(item => ({
+      id: docId(item.document!.name),
+      ...Object.fromEntries(Object.entries(item.document!.fields ?? {}).map(([key, value]) => [key, fromFirestoreValue(value)])),
+    })) as unknown as T[];
 }
 
 export async function saveDocument(collectionPath: string, id: string, data: PlainRecord) {

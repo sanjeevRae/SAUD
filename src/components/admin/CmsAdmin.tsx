@@ -67,7 +67,7 @@ export default function CmsAdmin({ token }: { token: string }) {
 
   const load = useCallback(async () => {
     setStatus('Loading current content...');
-    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}`, { headers: { 'x-admin-token': token } });
+    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}`, { headers: { 'x-customer-id': token } });
     const data = await res.json();
     const nextItems = data.items ?? [];
     setItems(nextItems);
@@ -81,7 +81,7 @@ export default function CmsAdmin({ token }: { token: string }) {
     const id = String(form[config.idField] || '').trim();
     if (!id) { setStatus('ID required.'); return; }
     setStatus('Saving changes...');
-    const res = await fetch('/api/admin?action=cms', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ path: config.path, id, data: form }) });
+    const res = await fetch('/api/admin?action=cms', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-customer-id': token }, body: JSON.stringify({ path: config.path, id, data: form }) });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Saved. Preview and storefront will update from Firestore.' : data.error || 'Save failed.');
     if (res.ok) await load();
@@ -90,7 +90,7 @@ export default function CmsAdmin({ token }: { token: string }) {
   const remove = async (id: string) => {
     if (!confirm('Delete this content item?')) return;
     setStatus('Deleting...');
-    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-admin-token': token } });
+    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-customer-id': token } });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Deleted.' : data.error || 'Delete failed.');
     if (res.ok) await load();

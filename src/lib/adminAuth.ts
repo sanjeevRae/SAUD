@@ -1,10 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { getDocument } from '@/lib/firestoreAdmin';
 
-export function assertAdmin(request: NextRequest) {
-  const token = process.env.ADMIN_ACCESS_TOKEN;
-  const provided = request.headers.get('x-admin-token');
+type AdminCustomer = { id: string; role?: string };
 
-  if (!token || token === 'change-this-admin-token' || provided !== token) {
+export async function assertAdmin(request: NextRequest) {
+  const customerId = request.headers.get('x-customer-id');
+
+  if (!customerId) {
+    return NextResponse.json({ error: 'Unauthorized admin request.' }, { status: 401 });
+  }
+
+  const account = await getDocument<AdminCustomer>('customers', customerId);
+
+  if (!account || account.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized admin request.' }, { status: 401 });
   }
 

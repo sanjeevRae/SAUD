@@ -52,7 +52,7 @@ export default function ProductAdmin({ token }: Props) {
   const [status, setStatus] = useState('');
   const [galleryUploading, setGalleryUploading] = useState(false);
 
-  const headers = useMemo(() => ({ 'content-type': 'application/json', 'x-admin-token': token }), [token]);
+  const headers = useMemo(() => ({ 'content-type': 'application/json', 'x-customer-id': token }), [token]);
   const selectedId = form.id;
   const generatedId = useMemo(() => nextProductId(items), [items]);
   const isEditingExisting = items.some(item => item.id === form.id);
@@ -61,7 +61,7 @@ export default function ProductAdmin({ token }: Props) {
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
-    const res = await fetch('/api/admin?action=products', { headers: { 'x-admin-token': token } });
+    const res = await fetch('/api/admin?action=products', { headers: { 'x-customer-id': token } });
     const data = await res.json();
     const nextItems = data.products ?? [];
     setItems(nextItems);
@@ -170,7 +170,7 @@ export default function ProductAdmin({ token }: Props) {
   const remove = async (id: string) => {
     if (!confirm('Delete this product?')) return;
     setStatus('Deleting product...');
-    const res = await fetch(`/api/admin?action=products&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-admin-token': token } });
+    const res = await fetch(`/api/admin?action=products&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-customer-id': token } });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Deleted.' : data.error || 'Delete failed.');
     if (res.ok) await load();

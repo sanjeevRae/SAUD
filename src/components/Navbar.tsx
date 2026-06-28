@@ -68,6 +68,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
   const [fallbackCountdownTarget] = useState(() => Date.now() + (22 * 60 * 60 + 37 * 60 + 54) * 1000);
   const { totalItems, trackActivity } = useCart();
   const { user, openLogin, logout } = useCustomerAuth();
+  const isAdmin = user?.role === 'admin';
   const accountRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -317,6 +318,18 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                 </button>
                 {isAccountOpen && (
                   <div className="absolute right-0 top-full z-[140] mt-3 w-56 border border-[#dedede] bg-white p-2 shadow-lg" role="menu">
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          router.push(`/admin?userId=${encodeURIComponent(user.id)}`);
+                        }}
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-[#f5f5f5]"
+                        role="menuitem"
+                      >
+                        <UserRound size={16} /> Admin dashboard
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setIsAccountOpen(false);
@@ -366,6 +379,18 @@ export default function Navbar({ notices = [] }: NavbarProps) {
 
         {user && isAccountOpen && (
           <div className="absolute right-4 top-full z-[140] mt-2 w-56 border border-[#dedede] bg-white p-2 shadow-lg md:hidden" role="menu" onMouseDown={event => event.stopPropagation()}>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setIsAccountOpen(false);
+                  router.push(`/admin?userId=${encodeURIComponent(user.id)}`);
+                }}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-[#f5f5f5]"
+                role="menuitem"
+              >
+                <UserRound size={16} /> Admin dashboard
+              </button>
+            )}
             <button
               onClick={() => {
                 setIsAccountOpen(false);

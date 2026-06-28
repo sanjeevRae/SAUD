@@ -265,7 +265,7 @@ export default function InsightDashboard({ token }: { token: string }) {
 
   const load = useCallback(async () => {
     setStatus('Loading orders...');
-    const response = await fetch('/api/admin?action=orders', { headers: { 'x-admin-token': token } });
+    const response = await fetch('/api/admin?action=orders', { headers: { 'x-customer-id': token } });
     const data = await response.json().catch(() => ({}));
     setOrders(data.orders ?? []);
     setStatus(response.ok ? '' : data.error || 'Could not load orders.');
@@ -315,7 +315,7 @@ export default function InsightDashboard({ token }: { token: string }) {
     setStatus(`Updating ${order.id}...`);
     const response = await fetch('/api/admin?action=orders', {
       method: 'PATCH',
-      headers: { 'content-type': 'application/json', 'x-admin-token': token },
+      headers: { 'content-type': 'application/json', 'x-customer-id': token },
       body: JSON.stringify({ id: order.id, status: nextStatus }),
     });
     const data = await response.json().catch(() => ({}));
@@ -344,9 +344,9 @@ export default function InsightDashboard({ token }: { token: string }) {
             <p className="mt-2 text-sm text-[#666]">Review checkout orders, print order details, track sales, and manage pending, delivered, returned, and cancelled orders.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/admin?token=${encodeURIComponent(token)}`} className="border border-[#ded8d0] bg-white px-4 py-2 text-sm font-semibold hover:border-[#111]">Back to admin</Link>
+            <Link href={`/admin?userId=${encodeURIComponent(token)}`} className="border border-[#ded8d0] bg-white px-4 py-2 text-sm font-semibold hover:border-[#111]">Back to admin</Link>
             <button onClick={() => void load()} className="inline-flex items-center gap-2 border border-[#ded8d0] bg-white px-4 py-2 text-sm font-semibold hover:border-[#111]"><RefreshCcw size={15} /> Refresh</button>
-            <Link href="/main-product" className="bg-[#111] px-4 py-2 text-sm font-semibold text-white">View shop</Link>
+            <Link href="/main-product" className="bg-black px-4 py-2 text-sm font-semibold" style={{ color: '#ffffff' }}>View shop</Link>
           </div>
         </div>
 

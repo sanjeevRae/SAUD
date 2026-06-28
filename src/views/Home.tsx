@@ -7,7 +7,6 @@ import Hero from '@/sections/Hero';
 import FeaturedProducts from '@/sections/FeaturedProducts';
 import Collection from '@/sections/Collection';
 import Products from '@/sections/Products';
-import PromoCards from '@/sections/PromoCards';
 import Categories from '@/sections/Categories';
 import WhyChooseUs from '@/sections/WhyChooseUs';
 import Testimonials from '@/sections/Testimonials';
@@ -27,7 +26,6 @@ export default function Home({ homepage }: HomeProps) {
         <FeaturedProducts products={homepage?.featuredProducts} />
         <Collection collections={homepage?.collections} />
         <Products products={homepage?.latestProducts} />
-        <PromoCards />
         <Categories categories={homepage?.categories} />
         <WhyChooseUs />
         <Testimonials testimonials={homepage?.testimonials} />

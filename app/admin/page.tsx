@@ -1,6 +1,7 @@
 ﻿import Link from 'next/link';
 import ProductAdmin from '@/components/admin/ProductAdmin';
 import CmsAdmin from '@/components/admin/CmsAdmin';
+import { getDocument } from '@/lib/firestoreAdmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,31 +10,29 @@ const collections = [
   { name: 'Notice Banner', path: 'homepage/noticeBanners/items', fields: 'Quote, message, schedule, countdown, CTA', count: 'CMS' },
   { name: 'Hero', path: 'homepage/heroBanners/items', fields: 'Title, copy, CTA buttons, hero image', count: 'Landing' },
   { name: 'Collections', path: 'homepage/collections/items', fields: 'Collection title and feature image', count: 'CMS' },
-  { name: 'Categories', path: 'categories', fields: 'Name, stock count, category image', count: 'Browse' },
-  { name: 'Testimonials', path: 'testimonials', fields: 'Customer story, rating, avatar', count: 'Social' },
+  { name: 'Categories', path: 'categories', fields: 'Name, stock count, category image', count: 'Browse' }
 ];
 
 type AdminPageProps = {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ userId?: string }>;
 };
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = await searchParams;
-  const adminToken = process.env.ADMIN_ACCESS_TOKEN;
-  const isConfigured = Boolean(adminToken && adminToken !== 'change-this-admin-token');
-  const isAllowed = isConfigured && params.token === adminToken;
+  const userId = params.userId || '';
+  const account = userId ? await getDocument<{ id: string; role?: string; name?: string }>('customers', userId) : null;
+  const isAllowed = account?.role === 'admin';
 
   if (!isAllowed) {
     return (
-      <main className="min-h-screen bg-[#f4f1ed] px-5 py-16 text-[#111111]">
-        <div className="mx-auto max-w-xl border border-[#ded8d0] bg-white p-8 shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">ChitraTech Admin</p>
-          <h1 className="mt-3 text-3xl font-semibold">Admin access</h1>
-          <p className="mt-3 text-sm leading-6 text-[#666666]">
-            Set `ADMIN_ACCESS_TOKEN` in `.env.local`, then open `/admin?token=YOUR_TOKEN`.
+      <main className="grid min-h-screen place-items-center bg-[#f4f1ed] px-5 text-[#111111]">
+        <div className="mx-auto max-w-xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8f1f35]">404</p>
+          <h1 className="mt-4 text-4xl font-semibold">Permission denied</h1>
+          <p className="mt-4 text-sm leading-6 text-[#666666]">
+            This page does not exist for your account or you do not have access to view it.
           </p>
-          {!isConfigured && <p className="mt-4 bg-[#fff7ed] p-3 text-sm text-[#9a3412]">Admin token is still missing or placeholder.</p>}
-          <Link href="/" className="mt-6 inline-flex bg-[#111111] px-5 py-2.5 text-sm font-medium text-white">Back home</Link>
+          <Link href="/" className="mt-8 inline-flex bg-[#111111] px-5 py-2.5 text-sm font-medium" style={{ color: '#ffffff' }}>Back home</Link>
         </div>
       </main>
     );
@@ -59,8 +58,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </div>
             <div className="flex gap-3">
               <Link href="/" className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View shop</Link>
-              <Link href={`/admin/insights?token=${encodeURIComponent(params.token || '')}`} className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
-              <Link href="/main-product" className="bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#f1d9df]">Products</Link>
+              <Link href={`/admin/insights?userId=${encodeURIComponent(userId)}`} className="border border-white/25 px-5 py-2.5 text-sm text-white transition hover:bg-white hover:text-black">View insight</Link>
+              <Link href="/main-product" className="bg-white px-5 py-2.5 text-sm font-medium transition hover:bg-[#f1d9df]" style={{ color: '#000000' }}>Products</Link>
             </div>
           </div>
 
@@ -95,8 +94,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </section>
 
         <div className="mt-8 space-y-8">
-          <CmsAdmin token={params.token || ''} />
-          <ProductAdmin token={params.token || ''} />
+          <CmsAdmin token={userId} />
+          <ProductAdmin token={userId} />
         </div>
       </div>
     </main>

@@ -7,6 +7,7 @@ type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 type CustomerAccount = {
   id: string;
   method: 'email' | 'google' | 'phone';
+  role?: string;
   email?: string;
   phone?: string;
   name: string;
@@ -82,6 +83,14 @@ function sanitizeUser(account: CustomerAccount) {
   return user;
 }
 
+async function getAccount(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get('id');
+  if (!id) return jsonError('Customer id is required.');
+  const account = await getDocument<CustomerAccount>('customers', id);
+  if (!account) return jsonError('Account not found.', 404);
+  return NextResponse.json({ user: sanitizeUser(account) });
+}
+
 function normalizeIdentity(payload: { method?: string; email?: string; phone?: string; firebaseUid?: string }) {
   if (payload.method === 'google') {
     const seed = payload.firebaseUid || payload.email || 'google-user';
@@ -104,6 +113,7 @@ async function upsertAccount(payload: LoginPayload) {
       const account: CustomerAccount = {
         id,
         method: payload.method,
+        role: 'customer',
         email: payload.email,
         phone: payload.phone,
         name: payload.name || payload.email?.split('@')[0] || payload.phone || 'Customer',
@@ -122,6 +132,7 @@ async function upsertAccount(payload: LoginPayload) {
 
     const merged: CustomerAccount = {
       ...existing,
+      role: existing.role || 'customer',
       photo: payload.photo || existing.photo,
       firebaseUid: payload.firebaseUid || existing.firebaseUid,
       updatedAt: new Date().toISOString(),
@@ -137,6 +148,7 @@ async function upsertAccount(payload: LoginPayload) {
   const account: CustomerAccount = {
     id,
     method: payload.method,
+    role: 'customer',
     email: payload.email,
     phone: payload.phone,
     name: payload.name || payload.email?.split('@')[0] || payload.phone || 'Customer',
@@ -308,6 +320,7 @@ async function deleteReview(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const action = request.nextUrl.searchParams.get('action');
+    if (action === 'account') return await getAccount(request);
     if (action === 'orders') return await getOrders(request);
     if (action === 'reviews') return await getReviews(request);
     return jsonError('Unsupported customer action.', 404);

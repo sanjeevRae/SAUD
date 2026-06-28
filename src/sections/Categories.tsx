@@ -25,7 +25,7 @@ export default function Categories({ categories = fallbackCategories }: Categori
         ))}
       </div>
       <div className="mt-6 text-center sm:mt-9">
-        <Link href="/main-product" className="inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-xs font-medium text-white sm:px-6 sm:py-3">View All Categories</Link>
+        <Link href="/main-product" className="inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-xs font-medium sm:px-6 sm:py-3" style={{ color: '#ffffff' }}>View All Categories</Link>
       </div>
     </section>
   );

@@ -96,7 +96,9 @@ export default function Cart() {
           <div className="bg-white px-6 py-16 text-center shadow-sm">
             <h2 className="text-xl font-semibold">Your cart is empty</h2>
             <p className="mt-2 text-sm text-[#666]">Add products before checkout.</p>
-            <Link href="/main-product" className="mt-6 inline-flex rounded-full bg-[#111] px-6 py-3 text-sm font-semibold text-white">Shop products</Link>
+            <Link href="/main-product" className="mt-6 inline-flex rounded-full bg-[#111] px-6 py-3 text-sm font-semibold" style={{ color: '#ffffff' }}>
+              Shop products
+            </Link>
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_390px]">

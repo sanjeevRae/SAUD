@@ -286,19 +286,19 @@ export default function ProfileDashboard() {
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
                       Email
-                      <span className="flex h-12 items-center gap-2 border border-[#dedede] bg-[#fbfaf8] px-4 focus-within:border-[#111]">
-                        <Mail size={16} className="text-[#777]" />
-                        <input value={form.email} onChange={event => setField('email', event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+                      <span className="relative block">
+                        <Mail size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
+                        <input value={form.email} onChange={event => setField('email', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
                       </span>
                     </label>
                     <label className="grid gap-2 text-sm font-medium">
                       Phone
-                      <span className="flex h-12 items-center gap-2 border border-[#dedede] bg-[#fbfaf8] px-4 focus-within:border-[#111]">
-                        <Phone size={16} className="text-[#777]" />
-                        <input value={form.phone} onChange={event => setField('phone', event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+                      <span className="relative block">
+                        <Phone size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
+                        <input value={form.phone} onChange={event => setField('phone', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
                       </span>
                     </label>
-                  </section>
+                </section>
 
                   <section className="grid gap-4">
                     <h3 className="flex items-center gap-2 text-lg font-semibold"><MapPin size={18} /> Shipping address</h3>

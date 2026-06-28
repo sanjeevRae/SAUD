@@ -1,33 +1,29 @@
 import InsightDashboard from '@/components/admin/InsightDashboard';
 import Link from 'next/link';
+import { getDocument } from '@/lib/firestoreAdmin';
 
 export const dynamic = 'force-dynamic';
 
 type AdminInsightsPageProps = {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ userId?: string }>;
 };
 
 export default async function AdminInsightsPage({ searchParams }: AdminInsightsPageProps) {
   const params = await searchParams;
-  const adminToken = process.env.ADMIN_ACCESS_TOKEN;
-  const isConfigured = Boolean(adminToken && adminToken !== 'change-this-admin-token');
-  const token = params.token || '';
-  const isAllowed = isConfigured && token === adminToken;
+  const userId = params.userId || '';
+  const account = userId ? await getDocument<{ id: string; role?: string }>('customers', userId) : null;
+  const isAllowed = account?.role === 'admin';
 
   if (!isAllowed) {
     return (
-      <main className="min-h-screen bg-[#f4f1ed] px-5 py-16 text-[#111111]">
-        <div className="mx-auto max-w-xl border border-[#ded8d0] bg-white p-8 shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">ChitraTech Admin</p>
-          <h1 className="mt-3 text-3xl font-semibold">Insight access</h1>
-          <p className="mt-3 text-sm leading-6 text-[#666666]">
-            Set `ADMIN_ACCESS_TOKEN` in `.env.local`, then open `/admin/insights?token=YOUR_TOKEN`.
+      <main className="grid min-h-screen place-items-center bg-[#f4f1ed] px-5 text-[#111111]">
+        <div className="mx-auto max-w-xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8f1f35]">404</p>
+          <h1 className="mt-4 text-4xl font-semibold">Permission denied</h1>
+          <p className="mt-4 text-sm leading-6 text-[#666666]">
+            This page does not exist for your account or you do not have access to view it.
           </p>
-          {!isConfigured && <p className="mt-4 bg-[#fff7ed] p-3 text-sm text-[#9a3412]">Admin token is still missing or placeholder.</p>}
-          <div className="mt-6 flex gap-3">
-            <Link href="/admin" className="inline-flex border border-[#ded8d0] px-5 py-2.5 text-sm font-medium text-[#111111]">Admin</Link>
-            <Link href="/" className="inline-flex bg-[#111111] px-5 py-2.5 text-sm font-medium text-white">Back home</Link>
-          </div>
+          <Link href="/" className="mt-8 inline-flex bg-[#111111] px-5 py-2.5 text-sm font-medium text-white">Back home</Link>
         </div>
       </main>
     );
@@ -36,7 +32,7 @@ export default async function AdminInsightsPage({ searchParams }: AdminInsightsP
   return (
     <main className="min-h-screen bg-[#f5f2ee] px-5 py-8 text-[#111111] md:px-7">
       <div className="mx-auto max-w-7xl">
-        <InsightDashboard token={token} />
+        <InsightDashboard token={userId} />
       </div>
     </main>
   );

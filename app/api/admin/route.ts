@@ -116,7 +116,7 @@ async function deleteCms(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const unauthorized = assertAdmin(request);
+  const unauthorized = await assertAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const unauthorized = assertAdmin(request);
+  const unauthorized = await assertAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const unauthorized = assertAdmin(request);
+  const unauthorized = await assertAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const unauthorized = assertAdmin(request);
+  const unauthorized = await assertAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
@@ -171,7 +171,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const unauthorized = assertAdmin(request);
+  const unauthorized = await assertAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {

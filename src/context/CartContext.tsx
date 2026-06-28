@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Product } from '@/data/products';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
+import { toast } from 'sonner';
 
 type CartItem = Product & {
   quantity: number;
@@ -97,6 +98,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...current, { ...product, quantity, selectedSize }];
     });
     trackActivity('add_to_cart', { productId: product.id, name: product.name, quantity, selectedSize });
+    setIsCartOpen(true);
+    toast.success('Added to cart', {
+      description: (
+        <div className="mt-1 space-y-1">
+          <p className="font-semibold text-white">{product.name}</p>
+          <p className="text-xs text-white/75">
+            {selectedSize ? `Size ${selectedSize}` : 'Ready to shop'}{quantity > 1 ? ` • Qty ${quantity}` : ' • Qty 1'}
+          </p>
+        </div>
+      ),
+      style: {
+        background: '#111111',
+        border: '1px solid rgba(255,255,255,0.12)',
+        color: '#ffffff',
+      },
+      classNames: {
+        title: '!text-white !font-semibold',
+        description: '!text-white',
+        actionButton: '!bg-white !text-black',
+        cancelButton: '!bg-[#2a2a2a] !text-white',
+      },
+      action: {
+        label: 'View cart',
+        onClick: () => setIsCartOpen(true),
+      },
+    });
 
   }, [openLogin, trackActivity, user]);
 

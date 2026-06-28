@@ -53,6 +53,8 @@ const categoryMenus: Record<string, { label: string; href: string }[]> = {
   ].map(label => ({ label, href: `/main-product?gender=women&q=${encodeURIComponent(label)}&title=${encodeURIComponent(`Women ${label}`)}` })),
 };
 
+const categoryMenuKeys = ['Best', 'Men', 'Women'] as const;
+
 export default function Navbar({ notices = [] }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -260,7 +262,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
               )}
             </div>
 
-            {['Best', 'Men', 'Women'].map(item => (
+            {categoryMenuKeys.map(item => (
               <div key={item} className="relative hidden md:block">
                 <button
                   type="button"
@@ -433,7 +435,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                   ))}
                 </div>
               </div>
-              {['Best', 'Men', 'Women'].map(item => (
+              {categoryMenuKeys.map(item => (
                 <div key={item}>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">{item}</p>
                   <div className="grid grid-cols-2 gap-2">

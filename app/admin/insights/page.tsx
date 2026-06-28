@@ -1,6 +1,23 @@
-import InsightDashboard from '@/components/admin/InsightDashboard';
+import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { getDocument } from '@/lib/firestoreAdmin';
+
+const InsightDashboard = nextDynamic(() => import('@/components/admin/InsightDashboard'), {
+  loading: () => (
+    <section className="overflow-hidden border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+      <div className="border-b border-[#eee8e1] bg-[#fbfaf8] p-5 md:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">Store insight</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Loading analytics...</h1>
+        <p className="mt-2 text-sm text-[#666]">Preparing charts, orders, and sales overview.</p>
+      </div>
+      <div className="grid gap-4 bg-[#f5f2ee] p-5 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="h-28 animate-pulse border border-[#e4ded6] bg-white" />
+        ))}
+      </div>
+    </section>
+  ),
+});
 
 export const dynamic = 'force-dynamic';
 

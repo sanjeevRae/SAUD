@@ -1,0 +1,15 @@
+{
+  "/api/admin/route": "/api/admin",
+  "/api/customer/route": "/api/customer",
+  "/_not-found/page": "/_not-found",
+  "/api/admin/cms/route": "/api/admin/cms",
+  "/api/admin/seed/route": "/api/admin/seed",
+  "/api/products/route": "/api/products",
+  "/main-product/page": "/main-product",
+  "/product/[id]/page": "/product/[id]",
+  "/admin/insights/page": "/admin/insights",
+  "/profile/page": "/profile",
+  "/admin/page": "/admin",
+  "/page": "/",
+  "/cart/page": "/cart"
+}

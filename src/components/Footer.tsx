@@ -9,9 +9,9 @@ export default function Footer() {
   ];
 
   const socials = [
-    { icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/people/Chitra-Tech/61589090079956/' },
+    { icon: Facebook, label: 'Facebook', href: '#' },
     { icon: Linkedin, label: 'LinkedIn', href: 'https://www.linkedin.com/in/san-rai/' },
-    { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/chitra.tech/' },
+    { icon: Instagram, label: 'Instagram', href: '#' },
     { icon: Github, label: 'GitHub', href: 'https://github.com/sanjeevRae' },
   ];
 
@@ -19,14 +19,11 @@ export default function Footer() {
     <footer className="bg-[#111111] px-6 py-12 text-white sm:px-10 md:px-16 md:py-16">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 md:grid-cols-[1.2fr_3fr] md:gap-16">
-          <div>
-            <h3 className="font-body text-2xl font-medium tracking-[0.02em]">ChitraTech</h3>
-            <p className="mt-1 font-body text-sm font-normal text-white/70">
-              Shop Company
-            </p>
+          <div className="flex h-42 w-40 items-center overflow-hidden">
+            <img src="/logo.png" alt="Saud Leather" className="h-full w-full object-contain object-left" />
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4 padding-top-4">
             {linkGroups.map((links, groupIndex) => (
               <ul key={groupIndex} className="space-y-2">
                 {links.map(link => (

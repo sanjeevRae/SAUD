@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MediaPicker from '@/components/admin/MediaPicker';
 
-type Field = { key: string; label: string; type?: 'text' | 'number' | 'textarea' | 'checkbox' | 'image' | 'list' | 'datetime' };
+type Field = { key: string; label: string; type?: 'text' | 'number' | 'textarea' | 'checkbox' | 'image' | 'gallery' | 'list' | 'datetime' };
 type Config = { key: string; title: string; eyebrow: string; path: string; idField: string; fields: Field[] };
 type Item = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -15,7 +15,7 @@ const configs: Config[] = [
     { key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'description', label: 'Description', type: 'textarea' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'primaryLabel', label: 'Primary label' }, { key: 'primaryHref', label: 'Primary link' }, { key: 'secondaryLabel', label: 'Secondary label' }, { key: 'secondaryHref', label: 'Secondary link' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' },
   ]},
   { key: 'featured', title: 'Featured Products', eyebrow: 'Homepage shelf', path: 'homepage/featuredProducts/items', idField: 'id', fields: [
-    { key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'category', label: 'Category' }, { key: 'price', label: 'Price', type: 'number' }, { key: 'originalPrice', label: 'Original price', type: 'number' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'rating', label: 'Rating', type: 'number' }, { key: 'featuredOrder', label: 'Featured order', type: 'number' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Product link' }, { key: 'sizes', label: 'Sizes', type: 'list' }, { key: 'description', label: 'Description', type: 'textarea' },
+    { key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'category', label: 'Category' }, { key: 'price', label: 'Price', type: 'number' }, { key: 'originalPrice', label: 'Original price', type: 'number' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'rating', label: 'Rating', type: 'number' }, { key: 'featuredOrder', label: 'Featured order', type: 'number' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' }, { key: 'image', label: 'Main image', type: 'image' }, { key: 'images', label: 'Gallery images', type: 'gallery' }, { key: 'linkHref', label: 'Product link' }, { key: 'sizes', label: 'Sizes', type: 'list' }, { key: 'description', label: 'Description', type: 'textarea' },
   ]},
   { key: 'collections', title: 'Collections', eyebrow: 'Homepage carousel', path: 'homepage/collections/items', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Collection link' }] },
   { key: 'categories', title: 'Categories', eyebrow: 'Shopping paths', path: 'categories', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Category link' }] },
@@ -44,6 +44,17 @@ function textValue(item: Item, keys: string[], fallback = 'Untitled') {
 
 function imageValue(item: Item) {
   return String(item.image || item.avatar || '');
+}
+
+function imageListValue(item: Item, key: string) {
+  const value = item[key];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean).slice(0, 5);
+  if (typeof value === 'string') return value.split(',').map(part => part.trim()).filter(Boolean).slice(0, 5);
+  return [];
+}
+
+function uniqueImages(images: string[]) {
+  return Array.from(new Set(images.map(image => image.trim()).filter(Boolean))).slice(0, 5);
 }
 
 function dateTimeLocalValue(value: Item[string]) {
@@ -97,6 +108,7 @@ export default function CmsAdmin({ token }: { token: string }) {
   };
 
   const previewImage = imageValue(form);
+  const previewImages = uniqueImages([previewImage, ...imageListValue(form, 'images')]);
   const selectedId = String(form[config.idField] || '');
 
   return (
@@ -159,7 +171,7 @@ export default function CmsAdmin({ token }: { token: string }) {
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {config.fields.map(field => (
-              <label key={field.key} className={`${field.type === 'textarea' || field.type === 'image' ? 'md:col-span-2' : ''} grid gap-2 text-sm font-medium text-[#333]`}>
+              <label key={field.key} className={`${field.type === 'textarea' || field.type === 'image' || field.type === 'gallery' ? 'md:col-span-2' : ''} grid gap-2 text-sm font-medium text-[#333]`}>
                 {field.label}
                 {field.type === 'textarea' ? (
                   <textarea value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: event.target.value })} className="min-h-28 border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
@@ -172,6 +184,54 @@ export default function CmsAdmin({ token }: { token: string }) {
                   <input type="datetime-local" value={dateTimeLocalValue(form[field.key])} onChange={event => setForm({ ...form, [field.key]: dateTimeStoredValue(event.target.value) })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
                 ) : field.type === 'list' ? (
                   <input type="text" value={Array.isArray(form[field.key]) ? (form[field.key] as string[]).join(', ') : String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: event.target.value.split(',').map(item => item.trim()).filter(Boolean) })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                ) : field.type === 'gallery' ? (
+                  <span className="grid gap-3">
+                    <MediaPicker
+                      label={`${field.label} picker`}
+                      value=""
+                      folder={`saud-leather/${config.key}`}
+                      helper="Add up to 5 product detail images. The first image becomes the main image if none is set."
+                      onChange={url => setForm(current => {
+                        const nextImages = uniqueImages([url, ...imageListValue(current, field.key)]);
+                        return {
+                          ...current,
+                          image: current.image || url,
+                          [field.key]: nextImages,
+                        };
+                      })}
+                    />
+                    <span className="grid gap-3 sm:grid-cols-5">
+                      {imageListValue(form, field.key).map((image, index) => (
+                        <span key={image} className="group relative overflow-hidden border border-[#ded8d0] bg-[#f7f3ee]">
+                          <button
+                            type="button"
+                            onClick={() => setForm(current => ({ ...current, image }))}
+                            className="block aspect-square w-full"
+                          >
+                            <img src={image} alt={`Gallery image ${index + 1}`} className="h-full w-full object-cover" />
+                          </button>
+                          <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/70 px-2 py-1 text-[11px] text-white">
+                            <button type="button" onClick={() => setForm(current => ({ ...current, image }))} className="font-semibold">{form.image === image ? 'Main' : 'Set main'}</button>
+                            <button
+                              type="button"
+                              onClick={() => setForm(current => {
+                                const nextImages = imageListValue(current, field.key).filter(item => item !== image);
+                                return { ...current, [field.key]: nextImages, image: current.image === image ? nextImages[0] || '' : current.image };
+                              })}
+                              className="font-semibold text-white/80 hover:text-white"
+                            >
+                              Remove
+                            </button>
+                          </span>
+                        </span>
+                      ))}
+                      {Array.from({ length: Math.max(0, 5 - imageListValue(form, field.key).length) }).map((_, index) => (
+                        <span key={`empty-${index}`} className="flex aspect-square items-center justify-center border border-dashed border-[#d8d2ca] bg-[#fbfaf8] text-xs font-normal text-[#777]">
+                          Add image
+                        </span>
+                      ))}
+                    </span>
+                  </span>
                 ) : (
                   <input type={field.type === 'number' ? 'number' : 'text'} value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
                 )}
@@ -179,9 +239,16 @@ export default function CmsAdmin({ token }: { token: string }) {
                   <MediaPicker
                     label={`${field.label} picker`}
                     value={String(form[field.key] || '')}
-                    folder={`chitratech-shop/${config.key}`}
+                    folder={`saud-leather/${config.key}`}
                     helper="Drag an image here, upload from device, or paste a URL."
-                    onChange={url => setForm(current => ({ ...current, [field.key]: url }))}
+                    onChange={url => setForm(current => {
+                      const nextImages = field.key === 'image' && config.key === 'featured' ? uniqueImages([url, ...imageListValue(current, 'images')]) : imageListValue(current, 'images');
+                      return {
+                        ...current,
+                        [field.key]: url,
+                        ...(field.key === 'image' && config.key === 'featured' ? { images: nextImages } : {}),
+                      };
+                    })}
                   />
                 )}
               </label>
@@ -223,6 +290,11 @@ export default function CmsAdmin({ token }: { token: string }) {
               <p className="mt-1">Collection: {config.path}</p>
             </div>
           </div>
+          {config.key === 'featured' && previewImages.length > 0 && (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {previewImages.slice(0, 3).map(image => <img key={image} src={image} alt="" className="aspect-square w-full border border-[#ded8d0] bg-white object-cover" />)}
+            </div>
+          )}
         </aside>
       </div>
     </section>

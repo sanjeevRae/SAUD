@@ -105,7 +105,7 @@ async function uploadLocalAsset(assetPath, cache) {
   const form = new FormData();
   form.append('file', new Blob([buffer], { type: mime }), path.basename(clean));
   form.append('upload_preset', uploadPreset);
-  form.append('folder', 'chitratech-shop/seed');
+  form.append('folder', 'saud-leather/seed');
   form.append('public_id', clean.replace(/\.[^.]+$/, '').replace(/[\\/]/g, '-'));
   for (let attempt = 1; attempt <= 4; attempt++) {
     const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: 'POST', body: form });
@@ -148,8 +148,8 @@ await loadEnv();
 const { products, collections, categories, testimonials } = await loadStoreData();
 const cache = new Map();
 
-const hero = [{ id: 'hero-main', eyebrow: 'New Season', title: 'Unleash Your Best Look with ChitraTech Shop Signatures', description: 'Discover refined everyday pieces, seasonal staples, and fashion-forward essentials.', image: '/hero_collage_01.jpg', primaryLabel: 'Shop Now', primaryHref: '/main-product', secondaryLabel: 'Learn More', secondaryHref: '#collection', enabled: true }];
-const richProducts = products.map(product => ({ ...product, seoTitle: product.seoTitle || `${product.name} | ChitraTech Shop`, seoDescription: product.seoDescription || product.description, seoKeywords: product.seoKeywords || [product.category, 'ChitraTech Shop', 'fashion'], ogImage: product.ogImage || product.image, canonicalPath: product.canonicalPath || `/product/${product.id}` }));
+const hero = [{ id: 'hero-main', eyebrow: 'New Season', title: 'Unleash Your Best Look with Saud Leather Signatures', description: 'Discover refined everyday pieces, seasonal staples, and fashion-forward essentials.', image: '/hero_collage_01.jpg', primaryLabel: 'Shop Now', primaryHref: '/main-product', secondaryLabel: 'Learn More', secondaryHref: '#collection', enabled: true }];
+const richProducts = products.map(product => ({ ...product, seoTitle: product.seoTitle || `${product.name} | Saud Leather`, seoDescription: product.seoDescription || product.description, seoKeywords: product.seoKeywords || [product.category, 'Saud Leather', 'fashion'], ogImage: product.ogImage || product.image, canonicalPath: product.canonicalPath || `/product/${product.id}` }));
 
 async function uploadAll(items) {
   const uploaded = [];
@@ -172,7 +172,6 @@ await writeCollection('categories', uploadedCategories);
 await writeCollection('testimonials', uploadedTestimonials);
 
 console.log(JSON.stringify({ ok: true, uploadedAssets: cache.size, counts: { products: uploadedProducts.length, hero: uploadedHero.length, featuredProducts: uploadedFeatured.length, collections: uploadedCollections.length, categories: uploadedCategories.length, testimonials: uploadedTestimonials.length } }, null, 2));
-
 
 
 

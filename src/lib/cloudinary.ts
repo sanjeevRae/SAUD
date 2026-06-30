@@ -6,7 +6,7 @@ export type CloudinaryUploadResult = {
   format?: string;
 };
 
-export async function uploadToCloudinary(file: File, folder = 'chitratech-shop'): Promise<CloudinaryUploadResult> {
+export async function uploadToCloudinary(file: File, folder = 'saud-leather'): Promise<CloudinaryUploadResult> {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 

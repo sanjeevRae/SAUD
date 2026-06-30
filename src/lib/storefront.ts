@@ -167,12 +167,16 @@ async function fetchDocument<T>(documentPath: string): Promise<T | null> {
 }
 
 function normalizeProduct(product: Product): Product {
+  const images = Array.from(new Set([product.image, ...(product.images ?? [])].filter(Boolean)));
+  const image = product.image || images[0] || '';
+
   return {
     ...product,
-    images: product.images?.length ? product.images : [product.image],
-    seoTitle: product.seoTitle || `${product.name} | ChitraTech Shop`,
+    image,
+    images: images.length ? images : image ? [image] : [],
+    seoTitle: product.seoTitle || `${product.name} | Saud Leather`,
     seoDescription: product.seoDescription || product.description,
-    ogImage: product.ogImage || product.image,
+    ogImage: product.ogImage || image,
     canonicalPath: product.canonicalPath || `/product/${product.id}`,
     linkHref: product.linkHref || product.canonicalPath || `/product/${product.id}`,
   };
@@ -248,7 +252,8 @@ export async function getProductsByQuery(query: ProductQuery = {}) {
 
 export async function getProductById(id: string) {
   const firestoreProduct = await fetchDocument<Product>(`products/${id}`);
-  const product = firestoreProduct ?? fallbackProducts.find(item => item.id === id) ?? null;
+  const featuredProduct = firestoreProduct ? null : await fetchDocument<Product>(`homepage/featuredProducts/items/${id}`);
+  const product = firestoreProduct ?? featuredProduct ?? fallbackProducts.find(item => item.id === id) ?? null;
   return product ? normalizeProduct(product) : null;
 }
 
@@ -280,7 +285,7 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
           {
             id: 'hero-local',
             eyebrow: 'New Season',
-            title: 'Unleash Your Best Look with ChitraTech Shop Signatures',
+            title: 'Unleash Your Best Look with Saud Leather Signatures',
             description: 'Discover refined everyday pieces, seasonal staples, and fashion-forward essentials.',
             image: '/hero_collage_01.jpg',
             primaryLabel: 'Shop Now',
@@ -298,8 +303,6 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
     testimonials: testimonials.length ? testimonials : fallbackTestimonials,
   };
 }
-
-
 
 
 

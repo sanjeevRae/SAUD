@@ -32,7 +32,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-const storageKey = 'chitratech-customer';
+const storageKey = 'saud-leather-customer';
 
 export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Customer | null>(null);
@@ -125,4 +125,3 @@ export function useCustomerAuth() {
   if (!context) throw new Error('useCustomerAuth must be used inside CustomerAuthProvider');
   return context;
 }
-

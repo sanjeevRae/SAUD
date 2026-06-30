@@ -3,7 +3,7 @@ import './globals.css';
 import Providers from './providers';
 
 export const metadata: Metadata = {
-  title: 'ChitraTech Shop',
+  title: 'Saud Leather',
   description: 'Modern essentials for curated fashion looks, built for everyday comfort and confident styling.',
 };
 

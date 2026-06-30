@@ -24,10 +24,10 @@ export default function WhyChooseUs() {
     <section className="bg-white px-5 py-24 md:px-10">
       <div className="mx-auto max-w-7xl">
         <p className="eyebrow mb-3">Why Choose Us.</p>
-        <h2 className="font-body mb-12 text-3xl font-semibold text-[#111111] md:mb-14 md:text-4xl">ChitraTech Shop: The Difference</h2>
+        <h2 className="font-body mb-12 text-3xl font-semibold text-[#111111] md:mb-14 md:text-4xl">Saud Leather: The Difference</h2>
         <div className="relative mx-auto hidden h-[680px] max-w-[1180px] md:block">
           <div className="absolute left-0 top-[42px] h-[555px] w-[365px] overflow-hidden bg-[#eeeeee]">
-            <img src="/why_model.jpg" alt="Model wearing ChitraTech Shop outfit" className="!h-full !w-full max-w-none object-cover object-[45%_center]" />
+            <img src="/why_model.jpg" alt="Model wearing Saud Leather outfit" className="!h-full !w-full max-w-none object-cover object-[45%_center]" />
           </div>
           <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full" viewBox="0 0 1180 680" preserveAspectRatio="none" aria-hidden="true">
             <path d="M 235 190 L 365 42 L 520 42" fill="none" stroke="#9f1631" strokeWidth="1.4" />
@@ -49,7 +49,7 @@ export default function WhyChooseUs() {
         </div>
         <div className="space-y-8 md:hidden">
           <div className="overflow-hidden bg-[#eeeeee]">
-            <img src="/why_model.jpg" alt="Model wearing ChitraTech Shop outfit" className="!h-[520px] !w-full max-w-none object-cover object-[45%_center]" />
+            <img src="/why_model.jpg" alt="Model wearing Saud Leather outfit" className="!h-[520px] !w-full max-w-none object-cover object-[45%_center]" />
           </div>
           {features.map(feature => (
             <article key={feature.title} className="relative grid grid-cols-[112px_1fr] gap-4 border-l border-[#b8b8b8] pl-5">

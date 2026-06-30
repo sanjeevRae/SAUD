@@ -17,7 +17,7 @@ export default function ProductDashboard({ token }: Props) {
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
-    const response = await fetch('/api/admin?action=products', { headers: { 'x-admin-token': token } });
+    const response = await fetch('/api/admin?action=products', { headers: { 'x-customer-id': token } });
     const data = await response.json().catch(() => ({}));
     setItems(data.products ?? []);
     setStatus(response.ok ? '' : data.error || 'Could not load products.');
@@ -45,7 +45,7 @@ export default function ProductDashboard({ token }: Props) {
             <p className="mt-2 text-sm text-[#666]">Table view for image, title, category, cost, quantity, rating, and status.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/admin?token=${encodeURIComponent(token)}`} className="border border-[#ded8d0] px-4 py-2 text-sm font-semibold hover:border-[#111]">Back to admin</Link>
+            <Link href={`/admin?userId=${encodeURIComponent(token)}#products`} className="border border-[#ded8d0] px-4 py-2 text-sm font-semibold hover:border-[#111]">Back to admin</Link>
             <Link href="/main-product" className="bg-[#111] px-4 py-2 text-sm font-semibold text-white">View shop</Link>
           </div>
         </div>

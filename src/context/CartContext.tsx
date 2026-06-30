@@ -26,7 +26,7 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
-const cartKey = (userId: string) => `chitratech-cart-${userId}`;
+const cartKey = (userId: string) => `saud-leather-cart-${userId}`;
 
 function compactItems(items: CartItem[]) {
   return items.map(item => ({
@@ -192,5 +192,4 @@ export function useCart() {
   if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 }
-
 

@@ -61,6 +61,7 @@ const statusOptions = [
 
 const statusLabels = Object.fromEntries(statusOptions.map(item => [item.value, item.label]));
 const closedStatuses = new Set(['cancelled', 'returned']);
+const chartSuccess = '#2E9469';
 
 function money(value?: number) {
   return `Rs. ${Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
@@ -256,7 +257,8 @@ function printOrder(order: Order) {
   return true;
 }
 
-export default function InsightDashboard({ token }: { token: string }) {
+export default function InsightDashboard({ token }: { token: string }){
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [query, setQuery] = useState('');
   const [range, setRange] = useState<RangeKey>('today');
@@ -341,7 +343,7 @@ export default function InsightDashboard({ token }: { token: string }) {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">Store insight</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Orders and analytics</h1>
-            <p className="mt-2 text-sm text-[#666]">Review checkout orders, print order details, track sales, and manage pending, delivered, returned, and cancelled orders.</p>
+           <p className="mt-2 text-sm text-[#666]">Review checkout orders, print order details, track sales, and manage pending, delivered, returned, and cancelled orders.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href={`/admin?userId=${encodeURIComponent(token)}`} className="border border-[#ded8d0] bg-white px-4 py-2 text-sm font-semibold hover:border-[#111]">Back to admin</Link>
@@ -360,7 +362,7 @@ export default function InsightDashboard({ token }: { token: string }) {
         </div>
       </div>
 
-      <div className="grid gap-4 bg-[#f5f2ee] p-5 md:grid-cols-2 md:p-7 xl:grid-cols-4">
+       <div className="grid gap-4 bg-[#f5f2ee] p-5 md:grid-cols-2 md:p-7 xl:grid-cols-4">
         {[
           { label: 'Net revenue', value: money(metrics.revenue), helper: 'Excludes returned/cancelled', icon: ReceiptText },
           { label: 'Products sold', value: metrics.quantity.toLocaleString(), helper: 'Active order quantity', icon: Boxes },
@@ -374,7 +376,7 @@ export default function InsightDashboard({ token }: { token: string }) {
           <article key={item.label} className="border border-[#e4ded6] bg-white p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-[#555]">{item.label}</p>
+               <p className="text-sm font-medium text-[#555]">{item.label}</p>
                 <p className="mt-3 truncate text-2xl font-semibold tracking-tight">{item.value}</p>
                 <p className="mt-1 text-xs text-[#777]">{item.helper}</p>
               </div>
@@ -385,20 +387,20 @@ export default function InsightDashboard({ token }: { token: string }) {
       </div>
 
       <div className="grid gap-5 p-5 md:p-7 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.6fr)]">
-        <article className="border border-[#eee8e1] bg-white p-5">
+         <article className="border border-[#eee8e1] bg-white p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">Analytics</p>
               <h2 className="mt-1 text-xl font-semibold">Net revenue trend</h2>
             </div>
-            <span className="inline-flex items-center gap-1 bg-[#ecfdf3] px-3 py-1 text-xs font-semibold text-[#166534]"><ArrowUpRight size={14} /> {rangeOptions.find(item => item.key === range)?.label}</span>
+           <span className="inline-flex items-center gap-1 bg-[#ecfdf3] px-3 py-1 text-xs font-semibold text-[#166534]"><ArrowUpRight size={14} /> {rangeOptions.find(item => item.key === range)?.label}</span>
           </div>
           <div className="mt-5 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={series}>
                 <defs>
                   <linearGradient id="revenue" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="5%" stopColor="#1f6feb" stopOpacity={0.34} />
+                     <stop offset="5%" stopColor="#1f6feb" stopOpacity={0.34} />
                     <stop offset="95%" stopColor="#1f6feb" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
@@ -419,18 +421,18 @@ export default function InsightDashboard({ token }: { token: string }) {
               <h2 className="mt-1 text-xl font-semibold">{bestDay.date}</h2>
               <p className="mt-1 text-sm text-[#666]">{bestDay.orders} orders, {money(bestDay.revenue)}</p>
             </div>
-            <CalendarDays className="text-[#8f1f35]" size={20} />
+           <CalendarDays className="text-[#8f1f35]" size={20} />
           </div>
           <div className="mt-6 flex h-56 items-end gap-3">
             {series.map(item => (
               <div key={item.key} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-                <div className="flex h-44 w-full items-end bg-[#f1ede7]">
+               <div className="flex h-44 w-full items-end bg-[#f1ede7]">
                   <div className="w-full bg-[#1f6feb]" style={{ height: `${Math.max(8, (item.orders / maxOrders) * 100)}%` }} />
                 </div>
                 <span className="max-w-full truncate text-xs text-[#777]">{item.date}</span>
               </div>
             ))}
-            {series.length === 0 && <p className="self-center text-sm text-[#777]">No orders in this period.</p>}
+             {series.length === 0 && <p className="self-center text-sm text-[#777]">No orders in this period.</p>}
           </div>
         </article>
       </div>
@@ -442,14 +444,14 @@ export default function InsightDashboard({ token }: { token: string }) {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">Order management</p>
               <h2 className="mt-1 text-xl font-semibold">Checkout orders</h2>
             </div>
-            <label className="flex h-11 items-center gap-2 border border-[#ded8d0] bg-[#fbfaf8] px-3 text-sm">
+            <label className="flex h-11 items-center gap-2 border border-[#eee8e1] bg-white px-3 text-sm">
               <Search size={16} className="text-[#777]" />
               <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search orders..." className="h-full min-w-0 bg-transparent outline-none" />
             </label>
           </div>
           <p className="mt-3 text-sm text-[#666]">{status || `${filteredOrders.length} orders shown for ${rangeOptions.find(item => item.key === range)?.label.toLowerCase()}`}</p>
 
-          <div className="mt-5 overflow-x-auto border border-[#eee8e1]">
+         <div className="mt-5 overflow-x-auto border border-[#eee8e1]">
             <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
               <thead className="bg-[#111] text-white">
                 <tr>
@@ -478,7 +480,7 @@ export default function InsightDashboard({ token }: { token: string }) {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-4 font-semibold">{orderQuantity(order)}</td>
+                     <td className="px-4 py-4 font-semibold">{orderQuantity(order)}</td>
                     <td className="px-4 py-4 font-semibold">{money(order.total)}</td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold ${statusClass(order.status)}`}>{statusLabels[order.status || ''] || order.status || 'Pending'}</span>
@@ -486,17 +488,16 @@ export default function InsightDashboard({ token }: { token: string }) {
                         {statusOptions.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
                       </select>
                     </td>
-                    <td className="px-4 py-4"><p className="inline-flex items-center gap-1"><Truck size={14} /> {order.deliveryLabel || 'Delivery'}</p><p className="mt-1 text-xs text-[#777]">{order.shippingAddress?.city || '-'}{order.shippingAddress?.area ? `, ${order.shippingAddress.area}` : ''}</p></td>
+                   <td className="px-4 py-4"><p className="inline-flex items-center gap-1"><Truck size={14} /> {order.deliveryLabel || 'Delivery'}</p><p className="mt-1 text-xs text-[#777]">{order.shippingAddress?.city || '-'}{order.shippingAddress?.area ? `, ${order.shippingAddress.area}` : ''}</p></td>
                     <td className="px-4 py-4">
-                      <button onClick={() => onPrint(order)} className="inline-flex h-9 items-center gap-2 bg-[#111] px-3 text-xs font-semibold text-white hover:bg-[#8f1f35]">
+                     <button onClick={() => onPrint(order)} className="inline-flex h-9 items-center gap-2 bg-[#111] px-3 text-xs font-semibold text-white hover:bg-[#8f1f35]">
                         <Printer size={14} /> Print
                       </button>
                     </td>
                   </tr>
                 ))}
                 {filteredOrders.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-12 text-center text-[#777]">No orders found for this period.</td></tr>
-                )}
+<tr><td colSpan={8} className="px-4 py-12 text-center text-[#777]">No orders found for this period.</td></tr>                )}
               </tbody>
             </table>
           </div>
@@ -511,9 +512,9 @@ export default function InsightDashboard({ token }: { token: string }) {
                   {product.image ? <img src={product.image} alt="" className="h-12 w-12 bg-[#eee9e2] object-cover" /> : <span className="h-12 w-12 bg-[#eee9e2]" />}
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{product.name}</p>
-                    <p className="mt-1 text-xs text-[#777]">{product.quantity} sold</p>
+                     <p className="mt-1 text-xs text-[#777]">{product.quantity} sold</p>
                   </div>
-                  <p className="text-sm font-semibold">{money(product.revenue)}</p>
+                   <p className="text-sm font-semibold">{money(product.revenue)}</p>
                 </div>
               ))}
               {products.length === 0 && <p className="border border-dashed border-[#ded8d0] p-5 text-sm text-[#777]">Best sellers appear after active checkout orders are placed.</p>}
@@ -526,7 +527,12 @@ export default function InsightDashboard({ token }: { token: string }) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categories} dataKey="value" nameKey="name" innerRadius={54} outerRadius={88} paddingAngle={3}>
-                    {categories.map((item, index) => <Cell key={item.name} fill={['#1f6feb', '#16a34a', '#f97316', '#8f1f35', '#111111'][index % 5]} />)}
+                  
+                  
+                  
+                  
+                  
+                   {categories.map((item, index) => <Cell key={item.name} fill={['#1f6feb', '#16a34a', '#f97316', '#8f1f35', '#111111'][index % 5]} />)}
                   </Pie>
                   <Tooltip formatter={(value: number | string) => typeof value === 'number' ? money(value) : value} contentStyle={{ border: '1px solid #e0dbd4', borderRadius: 0 }} />
                 </PieChart>
@@ -536,7 +542,8 @@ export default function InsightDashboard({ token }: { token: string }) {
 
           <article className="border border-[#eee8e1] bg-white p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">Order outcome</p>
-            <div className="mt-4 h-52">
+            <div className="admin-card p-5">
+              <div className="mt-4 h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={series}>
                   <CartesianGrid stroke="#eee8e1" vertical={false} />
@@ -549,7 +556,8 @@ export default function InsightDashboard({ token }: { token: string }) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </article>
+        </div>
+      </article>
         </div>
       </div>
     </section>

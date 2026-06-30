@@ -7,8 +7,12 @@ import MediaPicker from '@/components/admin/MediaPicker';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
 type Props = { token: string };
+type ProductForm = Omit<Product, 'price' | 'originalPrice'> & {
+  price: number | '';
+  originalPrice?: number | '';
+};
 
-const blank: Product = {
+const blank: ProductForm = {
   id: '',
   name: '',
   price: 0,
@@ -29,7 +33,8 @@ const parseColors = (value: string) => list(value).map(item => {
   return { name, hex: hex || '#111111' };
 });
 
-function money(value?: number) {
+function money(value?: number | '') {
+  if (value === '') return 'Rs--';
   return `Rs${Number(value || 0).toFixed(2)}`;
 }
 
@@ -44,7 +49,7 @@ function nextProductId(products: Product[]) {
 export default function ProductAdmin({ token }: Props) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Product[]>([]);
-  const [form, setForm] = useState<Product>(blank);
+  const [form, setForm] = useState<ProductForm>(blank);
   const [sizes, setSizes] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [colors, setColors] = useState('');
@@ -121,7 +126,7 @@ export default function ProductAdmin({ token }: Props) {
     try {
       const uploaded: string[] = [];
       for (const file of filesToUpload) {
-        const result = await uploadToCloudinary(file, 'chitratech-shop/products');
+        const result = await uploadToCloudinary(file, 'saud-leather/products');
         uploaded.push(result.secureUrl);
       }
       setImages(current => uniqueImages([...current, ...uploaded]));
@@ -137,8 +142,11 @@ export default function ProductAdmin({ token }: Props) {
 
   const save = async () => {
     const productId = form.id.trim() || generatedId;
-    if (!productId || !form.name.trim()) {
-      setStatus('Product ID and name are required.');
+    const price = form.price === '' ? NaN : Number(form.price);
+    const originalPrice = form.originalPrice === '' || form.originalPrice === undefined ? undefined : Number(form.originalPrice);
+
+    if (!productId || !form.name.trim() || !Number.isFinite(price)) {
+      setStatus('Product ID, name, and price are required.');
       return;
     }
 
@@ -147,8 +155,8 @@ export default function ProductAdmin({ token }: Props) {
     const product: Product = {
       ...form,
       id: productId,
-      price: Number(form.price),
-      originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+      price,
+      originalPrice,
       rating: Number(form.rating),
       reviewCount: form.reviewCount ? Number(form.reviewCount) : undefined,
       stock: Number(form.stock ?? 0),
@@ -178,7 +186,7 @@ export default function ProductAdmin({ token }: Props) {
 
 
   return (
-    <section className="border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+    <section id="products" className="border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
       <div className="border-b border-[#eee8e1] p-5 md:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -187,7 +195,8 @@ export default function ProductAdmin({ token }: Props) {
             <p className="mt-2 text-sm text-[#666666]">Create, edit, preview, upload images, and publish product data to Firestore.</p>
           </div>
           <div className="flex flex-col gap-3">
-            <Link href={`/admin?token=${encodeURIComponent(token)}#products`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em] text-white shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition hover:bg-white hover:text-[#111]">
+            <Link href={`/admin?userId=${encodeURIComponent(token)}#products`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em]" style={{
+  color: '#ffffff'}}>
               View all products
             </Link>
             <div className="grid grid-cols-3 border border-[#ded8d0] bg-[#faf8f5] text-center">
@@ -251,8 +260,8 @@ export default function ProductAdmin({ token }: Props) {
             <label className="grid gap-2 text-sm font-medium text-[#333]">Name<input value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Category<input value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Tag<input value={form.tag ?? ''} onChange={event => setForm({ ...form, tag: event.target.value })} className={inputClass} /></label>
-            <label className="grid gap-2 text-sm font-medium text-[#333]">Price<input type="number" value={form.price} onChange={event => setForm({ ...form, price: Number(event.target.value) })} className={inputClass} /></label>
-            <label className="grid gap-2 text-sm font-medium text-[#333]">Original price<input type="number" value={form.originalPrice ?? ''} onChange={event => setForm({ ...form, originalPrice: event.target.value ? Number(event.target.value) : undefined })} className={inputClass} /></label>
+            <label className="grid gap-2 text-sm font-medium text-[#333]">Price<input type="number" value={form.price} onChange={event => setForm({ ...form, price: event.target.value === '' ? '' : Number(event.target.value) })} className={`${inputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} /></label>
+            <label className="grid gap-2 text-sm font-medium text-[#333]">Original price<input type="number" value={form.originalPrice ?? ''} onChange={event => setForm({ ...form, originalPrice: event.target.value === '' ? '' : Number(event.target.value) })} className={`${inputClass} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Stock<input type="number" value={form.stock ?? 0} onChange={event => setForm({ ...form, stock: Number(event.target.value) })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Rating<input type="number" step="0.1" value={form.rating} onChange={event => setForm({ ...form, rating: Number(event.target.value) })} className={inputClass} /></label>
             <label className="grid gap-2 text-sm font-medium text-[#333]">Review count<input type="number" value={form.reviewCount ?? ''} onChange={event => setForm({ ...form, reviewCount: event.target.value ? Number(event.target.value) : undefined })} className={inputClass} /></label>
@@ -263,7 +272,7 @@ export default function ProductAdmin({ token }: Props) {
               <MediaPicker
                 label="Product media picker"
                 value={form.image}
-                folder="chitratech-shop/products"
+                folder="saud-leather/products"
                 helper="Upload from device, drag/drop, or paste a product image URL."
                 onChange={url => setForm(current => ({ ...current, image: url }))}
                 onUploaded={url => {
@@ -355,9 +364,4 @@ export default function ProductAdmin({ token }: Props) {
     </section>
   );
 }
-
-
-
-
-
 

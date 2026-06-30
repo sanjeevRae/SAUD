@@ -91,7 +91,7 @@ export default function LoginModal() {
           >
             Create a free account
           </button>{' '}
-          or log in to get started using ChitraTech Shop
+          or log in to get started using Saud Leather
         </p>
 
         {mode === 'register' && (
@@ -170,4 +170,3 @@ export default function LoginModal() {
     </div>
   );
 }
-

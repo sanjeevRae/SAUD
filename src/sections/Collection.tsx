@@ -55,7 +55,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
         <div>
           <p className="eyebrow mb-3 md:mb-5">Collection.</p>
           <h2 className="font-body max-w-[270px] text-3xl font-semibold leading-tight text-[#111111] md:max-w-none md:text-4xl">
-            ChitraTech Shop: The Collection
+            Saud Leather: The Collection
           </h2>
         </div>
         <Link href="/main-product" className="hidden items-center gap-3 border border-[#8f1f35] px-5 py-3 text-xs text-[#8f1f35] md:flex">
@@ -144,5 +144,4 @@ export default function Collection({ collections = fallbackCollections }: Collec
     </section>
   );
 }
-
 

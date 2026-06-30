@@ -1,4 +1,4 @@
-// File: A:\Ecommerce\app\app\api\customer\route.ts
+// File: C:\Users\Dell\E-commerce-Web-App\app\api\customer\route.ts
 import * as entry from '../../../../../app/api/customer/route.js'
 import type { NextRequest } from 'next/server.js'
 

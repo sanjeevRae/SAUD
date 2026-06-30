@@ -16,7 +16,7 @@ export default function Testimonials({ testimonials = fallbackTestimonials }: Te
     <section className="overflow-hidden bg-white py-24">
       <div className="mb-14 text-center">
         <p className="eyebrow mb-4">Testimonials.</p>
-        <h2 className="font-body text-3xl font-semibold text-[#111111] md:text-4xl">ChitraTech Shop: Customer Stories</h2>
+        <h2 className="font-body text-3xl font-semibold text-[#111111] md:text-4xl">Saud Leather: Customer Stories</h2>
       </div>
       <div ref={scrollRef} className="flex gap-5 overflow-x-auto scroll-smooth px-4 pb-3 md:gap-7 md:px-8" style={{ scrollbarWidth: 'none' }}>
         {testimonials.map(testimonial => (

@@ -232,7 +232,7 @@ export default function Navbar({ notices = [] }: NavbarProps) {
           </div>
 
           <Link href="/" className="font-serif text-2xl font-semibold text-[#111111]">
-            ChitraTech Shop
+            SAUD LEATHER
           </Link>
 
           <div className="hidden items-center gap-6 md:flex">

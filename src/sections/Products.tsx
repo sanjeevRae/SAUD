@@ -53,7 +53,7 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
     <section id="products" className="overflow-hidden bg-white px-4 py-16 text-center md:px-6 md:py-20 lg:px-10 lg:py-14">
       <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">Products</p>
       <h2 className="font-body mx-auto mb-5 max-w-[280px] text-xl font-extrabold leading-tight text-[#111111] md:max-w-none md:text-2xl lg:text-[22px]">
-        ChitraTech Shop: Our Latest Pieces
+        Saud Leather: Our Latest Pieces
       </h2>
       <button className="mb-7 inline-flex items-center gap-2 border border-[#b98390] px-4 py-2 text-[10px] font-medium text-[#8f1f35] transition-colors hover:border-[#8f1f35] hover:bg-[#8f1f35] hover:text-white md:mb-9">
         See More Products <MoveUpRight size={13} />
@@ -171,5 +171,4 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
     </section>
   );
 }
-
 

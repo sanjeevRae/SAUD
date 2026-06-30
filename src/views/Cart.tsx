@@ -45,7 +45,7 @@ export default function Cart() {
     }));
   }, [user]);
   const delivery = deliveryOptions.find(option => option.id === selectedDelivery) ?? deliveryOptions[1];
-  const discount = useMemo(() => voucherCode.trim().toUpperCase() === 'CHITRA10' ? Math.round(totalPrice * 0.1) : 0, [totalPrice, voucherCode]);
+  const discount = useMemo(() => voucherCode.trim().toUpperCase() === 'SAUD10' ? Math.round(totalPrice * 0.1) : 0, [totalPrice, voucherCode]);
   const total = Math.max(0, totalPrice - discount + delivery.fee);
 
   const updateAddress = (field: keyof typeof shippingAddress, value: string) => {
@@ -213,4 +213,3 @@ export default function Cart() {
     </div>
   );
 }
-

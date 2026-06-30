@@ -1,7 +1,9 @@
 {
   "/api/customer/route": "app/api/customer/route.js",
   "/api/admin/route": "app/api/admin/route.js",
-  "/admin/insights/page": "app/admin/insights/page.js",
+  "/admin/page": "app/admin/page.js",
   "/page": "app/page.js",
-  "/admin/page": "app/admin/page.js"
+  "/main-product/page": "app/main-product/page.js",
+  "/product/[id]/page": "app/product/[id]/page.js",
+  "/admin/insights/page": "app/admin/insights/page.js"
 }

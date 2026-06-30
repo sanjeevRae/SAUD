@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Cart from '@/views/Cart';
 
 export const metadata: Metadata = {
-  title: 'Cart | ChitraTech Shop',
+  title: 'Cart | Saud Leather',
   description: 'Review your selected products and proceed to checkout.',
 };
 

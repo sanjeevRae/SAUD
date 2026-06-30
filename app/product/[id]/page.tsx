@@ -9,12 +9,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!product) {
     return {
-      title: 'Product | ChitraTech Shop',
+      title: 'Product | Saud Leather',
       description: 'Explore product details, size options, and related picks.',
     };
   }
 
-  const title = product.seoTitle || `${product.name} | ChitraTech Shop`;
+  const title = product.seoTitle || `${product.name} | Saud Leather`;
   const description = product.seoDescription || product.description;
   const image = product.ogImage || product.image;
   const canonicalPath = product.canonicalPath || `/product/${product.id}`;

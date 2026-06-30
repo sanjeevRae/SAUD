@@ -4,7 +4,7 @@ import { getDocument } from '@/lib/firestoreAdmin';
 
 const InsightDashboard = nextDynamic(() => import('@/components/admin/InsightDashboard'), {
   loading: () => (
-    <section className="overflow-hidden border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+   <section className="overflow-hidden border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
       <div className="border-b border-[#eee8e1] bg-[#fbfaf8] p-5 md:p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">Store insight</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Loading analytics...</h1>
@@ -35,7 +35,7 @@ export default async function AdminInsightsPage({ searchParams }: AdminInsightsP
     return (
       <main className="grid min-h-screen place-items-center bg-[#f4f1ed] px-5 text-[#111111]">
         <div className="mx-auto max-w-xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8f1f35]">404</p>
+           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8f1f35]">404</p>
           <h1 className="mt-4 text-4xl font-semibold">Permission denied</h1>
           <p className="mt-4 text-sm leading-6 text-[#666666]">
             This page does not exist for your account or you do not have access to view it.

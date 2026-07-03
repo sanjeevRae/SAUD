@@ -189,6 +189,47 @@ async function getOrders(request: NextRequest) {
   return NextResponse.json({ orders: filtered });
 }
 
+async function updateOrder(request: NextRequest) {
+  const payload = await request.json() as {
+    userId?: string;
+    orderId?: string;
+    intent?: 'cancel' | 'shipping';
+    shippingAddress?: Record<string, string>;
+  };
+
+  if (!payload.userId || !payload.orderId || !payload.intent) return jsonError('Order update payload is incomplete.');
+
+  const existing = await getDocument<CustomerOrder>('orders', payload.orderId);
+  if (!existing) return jsonError('Order not found.', 404);
+  if (existing.user?.id !== payload.userId) return jsonError('You do not have access to this order.', 403);
+
+  const currentStatus = existing.status || 'pending_cod';
+  const editableStatuses = new Set(['pending_cod', 'processing']);
+
+  if (payload.intent === 'cancel') {
+    if (!editableStatuses.has(currentStatus)) return jsonError('This order can no longer be cancelled.');
+    const order: CustomerOrder = {
+      ...existing,
+      status: 'cancelled',
+      updatedAt: new Date().toISOString(),
+    };
+    await saveDocument('orders', payload.orderId, order);
+    return NextResponse.json({ ok: true, order });
+  }
+
+  if (!editableStatuses.has(currentStatus)) return jsonError('Delivery details can no longer be changed for this order.');
+  if (!payload.shippingAddress) return jsonError('Shipping address is required.');
+
+  const order: CustomerOrder = {
+    ...existing,
+    shippingAddress: payload.shippingAddress,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await saveDocument('orders', payload.orderId, order);
+  return NextResponse.json({ ok: true, order });
+}
+
 async function getReviews(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return jsonError('User id is required.');
@@ -349,6 +390,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const action = request.nextUrl.searchParams.get('action');
     if (action === 'account') return await updateAccount(request);
+    if (action === 'orders') return await updateOrder(request);
     return jsonError('Unsupported customer action.', 404);
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : 'Customer request failed.', 500);

@@ -49,6 +49,13 @@ export type StoreCategory = {
   linkHref?: string;
 };
 
+export type SocialLink = {
+  id: string;
+  platform: string;
+  href: string;
+  enabled?: boolean;
+};
+
 export type HomepageConfig = {
   noticeBanners: NoticeBanner[];
   heroBanners: HeroBanner[];
@@ -57,7 +64,15 @@ export type HomepageConfig = {
   collections: Collection[];
   categories: StoreCategory[];
   testimonials: Testimonial[];
+  socialLinks: SocialLink[];
 };
+
+const footerSocialPlatforms = [
+  { id: 'facebook', platform: 'Facebook' },
+  { id: 'instagram', platform: 'Instagram' },
+  { id: 'tiktok', platform: 'TikTok' },
+];
+const footerSocialOrder = footerSocialPlatforms.map(item => item.id);
 
 type FirestoreValue =
   | { stringValue?: string }
@@ -257,8 +272,26 @@ export async function getProductById(id: string) {
   return product ? normalizeProduct(product) : null;
 }
 
+export async function getSocialLinks() {
+  const socialLinks = await fetchCollection<SocialLink>('homepage/socialLinks/items');
+  const normalized = socialLinks
+    .map(link => {
+      const key = `${String(link.id || '')} ${String(link.platform || '')}`.toLowerCase();
+      const social = footerSocialPlatforms.find(item => key.includes(item.id) || key.includes(item.platform.toLowerCase()));
+      return social ? { ...link, id: social.id, platform: social.platform, href: String(link.href || '').trim() } : null;
+    })
+    .filter((link): link is SocialLink => {
+      if (!link) return false;
+      return link.enabled !== false && Boolean(link.href) && link.href !== '#';
+    });
+
+  return footerSocialOrder
+    .map(id => normalized.find(link => link.id === id))
+    .filter((link): link is SocialLink => Boolean(link));
+}
+
 export async function getHomepageConfig(): Promise<HomepageConfig> {
-  const [noticeBanners, heroBanners, products, featuredProducts, collections, categories, testimonials] = await Promise.all([
+  const [noticeBanners, heroBanners, products, featuredProducts, collections, categories, testimonials, socialLinks] = await Promise.all([
     fetchCollection<NoticeBanner>('homepage/noticeBanners/items'),
     fetchCollection<HeroBanner>('homepage/heroBanners/items'),
     getProductsByQuery({ limit: 10 }),
@@ -266,6 +299,7 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
     fetchCollection<Collection>('homepage/collections/items'),
     fetchCollection<StoreCategory>('categories'),
     fetchCollection<Testimonial>('testimonials'),
+    getSocialLinks(),
   ]);
 
   return {
@@ -294,20 +328,17 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
             secondaryHref: '#collection',
           },
         ],
-    featuredProducts: featuredProducts.length
-      ? featuredProducts.filter(product => product.enabled !== false).map(normalizeProduct).sort((a, b) => Number(a.featuredOrder ?? 999) - Number(b.featuredOrder ?? 999))
-      : products.slice(0, 8),
+    featuredProducts: featuredProducts
+      .filter(product => product.enabled !== false)
+      .map(normalizeProduct)
+      .sort((a, b) => Number(a.featuredOrder ?? 999) - Number(b.featuredOrder ?? 999)),
     latestProducts: products.slice(0, 10),
     collections: collections.length ? collections : fallbackCollections,
     categories: categories.length ? categories : fallbackCategories,
     testimonials: testimonials.length ? testimonials : fallbackTestimonials,
+    socialLinks,
   };
 }
-
-
-
-
-
 
 
 

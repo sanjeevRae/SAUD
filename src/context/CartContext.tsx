@@ -10,6 +10,30 @@ type CartItem = Product & {
   selectedSize?: string;
 };
 
+export type CheckoutOrder = {
+  id: string;
+  items?: Array<{
+    id?: string;
+    name?: string;
+    price?: number;
+    image?: string;
+    category?: string;
+    quantity?: number;
+    selectedSize?: string;
+    linkHref?: string;
+  }>;
+  subtotal?: number;
+  discount?: number;
+  deliveryFee?: number;
+  deliveryLabel?: string;
+  total?: number;
+  paymentMethod?: string;
+  status?: string;
+  shippingAddress?: Record<string, string>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 type CartContextValue = {
   items: CartItem[];
   totalItems: number;
@@ -20,7 +44,7 @@ type CartContextValue = {
   removeFromCart: (productId: string, selectedSize?: string) => void;
   updateQuantity: (productId: string, quantity: number, selectedSize?: string) => void;
   clearCart: () => void;
-  checkout: (details?: { deliveryFee?: number; deliveryLabel?: string; shippingAddress?: Record<string, string>; voucherCode?: string }) => Promise<void>;
+  checkout: (details?: { deliveryFee?: number; deliveryLabel?: string; shippingAddress?: Record<string, string>; voucherCode?: string }) => Promise<CheckoutOrder | null>;
   checkoutStatus: string;
   trackActivity: (type: string, data?: Record<string, unknown>) => void;
 };
@@ -150,9 +174,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const checkout = useCallback(async (details: { deliveryFee?: number; deliveryLabel?: string; shippingAddress?: Record<string, string>; voucherCode?: string } = {}) => {
     if (!user) {
       openLogin();
-      return;
+      return null;
     }
-    if (!items.length) return;
+    if (!items.length) return null;
     setCheckoutStatus('Placing Cash on Delivery order...');
     const response = await fetch('/api/customer?action=checkout', {
       method: 'POST',
@@ -162,11 +186,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const data = await response.json();
     if (!response.ok) {
       setCheckoutStatus(data.error || 'Checkout failed.');
-      return;
+      return null;
     }
     trackActivity('checkout_cod', { orderId: data.order?.id, total: data.order?.total });
     setItems([]);
     setCheckoutStatus(`Order placed. Cash on Delivery total: Rs${Number(data.order?.total ?? 0).toFixed(2)}`);
+    return data.order ?? null;
   }, [items, openLogin, totalPrice, trackActivity, user]);
 
   const value = useMemo(() => ({
@@ -192,4 +217,3 @@ export function useCart() {
   if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 }
-

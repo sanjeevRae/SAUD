@@ -11,15 +11,19 @@ const productSlots = [-3, -2, -1, 0, 1, 2, 3];
 type ProductsProps = { products?: Product[] };
 
 export default function Products({ products = fallbackProducts }: ProductsProps) {
-  const wrapIndex = (index: number) => ((index % products.length) + products.length) % products.length;
-  const [activeIndex, setActiveIndex] = useState(4);
+  const [activeIndex, setActiveIndex] = useState(0);
   const router = useRouter();
-  const activeProduct = products[activeIndex];
+
+  if (!products.length) return null;
+
+  const wrapIndex = (index: number) => ((index % products.length) + products.length) % products.length;
+  const safeActiveIndex = wrapIndex(activeIndex);
+  const activeProduct = products[safeActiveIndex];
 
   const go = (direction: 'prev' | 'next') => setActiveIndex(previous => wrapIndex(direction === 'prev' ? previous - 1 : previous + 1));
 
   const getOffset = (index: number) => {
-    let offset = index - activeIndex;
+    let offset = index - safeActiveIndex;
     if (offset > products.length / 2) offset -= products.length;
     if (offset < -products.length / 2) offset += products.length;
     return offset;
@@ -68,7 +72,7 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
           return (
             <button
               key={product.id}
-              onClick={() => offset !== 0 && setActiveIndex(wrapIndex(activeIndex + offset))}
+              onClick={() => offset !== 0 && setActiveIndex(wrapIndex(safeActiveIndex + offset))}
               aria-current={activeCard}
               className="absolute top-1/2 m-0 overflow-hidden rounded-none border-0 bg-[#f2f2f2] p-0 leading-none outline-none transition-all duration-700 focus:outline-none focus-visible:outline-none"
               style={{
@@ -171,4 +175,3 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
     </section>
   );
 }
-

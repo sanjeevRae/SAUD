@@ -9,7 +9,7 @@ import { useCart } from '@/context/CartContext';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 
-const sizes = ['S', 'M', 'L', 'XL'];
+const fallbackSizes = ['S', 'M', 'L', 'XL'];
 
 type ProductDetailProps = {
   product?: Product;
@@ -60,7 +60,7 @@ function formatDeliveryDate(value: Date) {
 export default function ProductDetail({ product: productProp, productId, relatedProducts: relatedProductsProp }: ProductDetailProps) {
   const router = useRouter();
   const { addToCart, trackActivity } = useCart();
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -78,6 +78,9 @@ export default function ProductDetail({ product: productProp, productId, related
     () => relatedProductsProp ?? products.filter(item => item.id !== product.id).slice(0, 4),
     [product.id, relatedProductsProp],
   );
+  const availableSizes = useMemo(() => (
+    product.sizes?.length ? product.sizes : fallbackSizes
+  ), [product.sizes]);
 
   const images = useMemo(() => {
     const baseImages = [product.image, ...(product.images ?? [])].filter(Boolean);
@@ -125,6 +128,10 @@ export default function ProductDetail({ product: productProp, productId, related
   useEffect(() => {
     trackActivity('product_view', { productId: product.id, name: product.name, category: product.category });
   }, [product.category, product.id, product.name, trackActivity]);
+
+  useEffect(() => {
+    setSelectedSize(current => availableSizes.includes(current) ? current : availableSizes[0] || '');
+  }, [availableSizes]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentDate(new Date()), 60_000);
@@ -236,7 +243,7 @@ export default function ProductDetail({ product: productProp, productId, related
             <div className="mt-7">
               <p className="font-body mb-3 text-xs font-semibold sm:text-sm">Select size</p>
               <div className="flex flex-wrap gap-2.5">
-                {sizes.map(size => (
+                {availableSizes.map(size => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -369,7 +376,6 @@ export default function ProductDetail({ product: productProp, productId, related
     </div>
   );
 }
-
 
 
 

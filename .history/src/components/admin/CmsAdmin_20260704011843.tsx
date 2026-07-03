@@ -1,0 +1,427 @@
+﻿'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import MediaPicker from '@/components/admin/MediaPicker';
+
+type Field = { key: string; label: string; type?: 'text' | 'number' | 'textarea' | 'checkbox' | 'image' | 'gallery' | 'list' | 'datetime'; placeholder?: string };
+type Config = { key: string; title: string; eyebrow: string; path: string; idField: string; fields: Field[] };
+type Item = Record<string, string | number | boolean | string[] | undefined>;
+const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free Size', 'One Size'];
+const socialPlatforms = [
+  { id: 'facebook', platform: 'Facebook', placeholder: 'https://facebook.com/your-page' },
+  { id: 'instagram', platform: 'Instagram', placeholder: 'https://instagram.com/your-page' },
+  { id: 'tiktok', platform: 'TikTok', placeholder: 'https://tiktok.com/@your-page' },
+];
+
+const configs: Config[] = [
+  { key: 'notice', title: 'Notice Banner', eyebrow: 'Top message', path: 'homepage/noticeBanners/items', idField: 'id', fields: [
+    { key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'message', label: 'Banner message', type: 'textarea' }, { key: 'quote', label: 'Quote / highlight' }, { key: 'countdownTo', label: 'Countdown end time', type: 'datetime' }, { key: 'startsAt', label: 'Starts at', type: 'datetime' }, { key: 'endsAt', label: 'Ends at', type: 'datetime' }, { key: 'ctaLabel', label: 'CTA label' }, { key: 'ctaHref', label: 'CTA link' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+  ]},
+  { key: 'hero', title: 'Hero Banners', eyebrow: 'First impression', path: 'homepage/heroBanners/items', idField: 'id', fields: [
+    { key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'description', label: 'Description', type: 'textarea' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'primaryLabel', label: 'Primary label' }, { key: 'primaryHref', label: 'Primary link' }, { key: 'secondaryLabel', label: 'Secondary label' }, { key: 'secondaryHref', label: 'Secondary link' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+  ]},
+  { key: 'featured', title: 'Featured Products', eyebrow: 'Homepage shelf', path: 'homepage/featuredProducts/items', idField: 'id', fields: [
+    { key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'category', label: 'Category' }, { key: 'price', label: 'Price', type: 'number' }, { key: 'originalPrice', label: 'Original price', type: 'number' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'rating', label: 'Rating', type: 'number' }, { key: 'featuredOrder', label: 'Featured order', type: 'number' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' }, { key: 'image', label: 'Main image', type: 'image' }, { key: 'images', label: 'Gallery images', type: 'gallery' }, { key: 'linkHref', label: 'Product link' }, { key: 'sizes', label: 'Sizes', type: 'list' }, { key: 'description', label: 'Description', type: 'textarea' },
+  ]},
+  { key: 'collections', title: 'Collections', eyebrow: 'Homepage carousel', path: 'homepage/collections/items', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Collection link' }] },
+  { key: 'categories', title: 'Categories', eyebrow: 'Shopping paths', path: 'categories', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Category link' }] },
+  { key: 'socials', title: 'Social Links', eyebrow: 'Footer buttons', path: 'homepage/socialLinks/items', idField: 'id', fields: [
+    { key: 'href', label: 'Social media link' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+  ]},
+  { key: 'testimonials', title: 'Testimonials', eyebrow: 'Customer proof', path: 'testimonials', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'rating', label: 'Rating', type: 'number' }, { key: 'text', label: 'Text', type: 'textarea' }, { key: 'avatar', label: 'Avatar', type: 'image' }, { key: 'date', label: 'Date' }] },
+];
+
+function defaultNoticeItem(): Item {
+  return {
+    id: 'main-notice',
+    title: 'Summer Sale',
+    message: 'Get 50% Off This Summer Sale. Grab It Fast!',
+    quote: '',
+    countdownTo: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    startsAt: '',
+    endsAt: '',
+    ctaLabel: 'Shop now',
+    ctaHref: '/main-product',
+    enabled: true,
+  };
+}
+
+function textValue(item: Item, keys: string[], fallback = 'Untitled') {
+  const value = keys.map(key => item[key]).find(Boolean);
+  return String(value || fallback);
+}
+
+function imageValue(item: Item) {
+  return String(item.image || item.avatar || '');
+}
+
+function imageListValue(item: Item, key: string) {
+  const value = item[key];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean).slice(0, 5);
+  if (typeof value === 'string') return value.split(',').map(part => part.trim()).filter(Boolean).slice(0, 5);
+  return [];
+}
+
+function uniqueImages(images: string[]) {
+  return Array.from(new Set(images.map(image => image.trim()).filter(Boolean))).slice(0, 5);
+}
+
+function listValue(item: Item, key: string) {
+  const value = item[key];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map(part => part.trim()).filter(Boolean);
+  return [];
+}
+
+function nextItemId(items: Item[]) {
+  const highest = items.reduce((max, item) => {
+    const numeric = Number(item.id);
+    return Number.isInteger(numeric) && numeric > max ? numeric : max;
+  }, 0);
+  return String(highest + 1);
+}
+
+function defaultItem(config: Config, items: Item[] = []): Item {
+  if (config.key === 'notice') return defaultNoticeItem();
+  if (config.key === 'featured') {
+    return {
+      id: nextItemId(items),
+      enabled: true,
+      price: 0,
+      stock: 0,
+      rating: 5,
+      featuredOrder: items.length + 1,
+      images: [],
+    };
+  }
+  if (config.key === 'socials') {
+    const next = socialPlatforms.find(option => !items.some(item => String(item.id).toLowerCase() === option.id)) ?? socialPlatforms[0];
+    return {
+      id: next.id,
+      platform: next.platform,
+      href: '',
+      enabled: true,
+    };
+  }
+  return { enabled: true };
+}
+
+function socialOption(item: Item) {
+  const id = String(item.id || '').toLowerCase();
+  const platform = String(item.platform || '').toLowerCase();
+  return socialPlatforms.find(option => option.id === id || option.platform.toLowerCase() === platform);
+}
+
+function socialItem(id: string, items: Item[]) {
+  const saved = items.find(item => String(item.id).toLowerCase() === id);
+  const option = socialPlatforms.find(item => item.id === id) ?? socialPlatforms[0];
+  return saved ?? { id: option.id, platform: option.platform, href: '', enabled: true };
+}
+
+function fieldPlaceholder(config: Config, field: Field, form: Item) {
+  if (field.placeholder) return field.placeholder;
+  if (config.key === 'socials' && field.key === 'href') return socialOption(form)?.placeholder;
+  return undefined;
+}
+
+function dateTimeLocalValue(value: Item[string]) {
+  if (!value) return '';
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function dateTimeStoredValue(value: string) {
+  return value ? new Date(value).toISOString() : '';
+}
+
+export default function CmsAdmin({ token }: { token: string }) {
+  const [activeKey, setActiveKey] = useState(configs[0].key);
+  const config = useMemo(() => configs.find(item => item.key === activeKey) ?? configs[0], [activeKey]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [form, setForm] = useState<Item>(defaultNoticeItem());
+  const [status, setStatus] = useState('');
+
+  const load = useCallback(async () => {
+    setStatus('Loading current content...');
+    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}`, { headers: { 'x-customer-id': token } });
+    const data = await res.json();
+    const loadedItems = data.items ?? [];
+    const nextItems = config.key === 'socials'
+      ? loadedItems.filter((item: Item) => socialPlatforms.some(option => option.id === String(item.id).toLowerCase()))
+      : loadedItems;
+    setItems(nextItems);
+    setForm(current => {
+      if (config.key === 'socials') {
+        const currentId = String(current[config.idField] || '').toLowerCase();
+        const saved = nextItems.find((item: Item) => String(item.id).toLowerCase() === currentId);
+        return saved ?? defaultItem(config, nextItems);
+      }
+      if (config.key === 'featured' && !current.name) return defaultItem(config, nextItems);
+      return current[config.idField] ? current : defaultItem(config, nextItems);
+    });
+    setStatus(res.ok ? '' : data.error || 'Could not load content.');
+  }, [config, token]);
+
+  useEffect(() => { setForm(defaultItem(config)); void load(); }, [config, load]);
+
+  const save = async () => {
+    const social = config.key === 'socials' ? socialOption(form) : undefined;
+    if (config.key === 'socials' && !social) { setStatus('Choose Facebook, Instagram, or TikTok.'); return; }
+    const payload = social ? { ...form, id: social.id, platform: social.platform, href: String(form.href || '').trim() } : form;
+    const id = String(payload[config.idField] || '').trim();
+    if (!id) { setStatus('ID required.'); return; }
+    setStatus('Saving changes...');
+    const res = await fetch('/api/admin?action=cms', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-customer-id': token }, body: JSON.stringify({ path: config.path, id, data: payload }) });
+    const data = await res.json().catch(() => ({}));
+    setStatus(res.ok ? 'Saved. Preview and storefront will update from Firestore.' : data.error || 'Save failed.');
+    if (res.ok) await load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Delete this content item?')) return;
+    setStatus('Deleting...');
+    const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}&id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-customer-id': token } });
+    const data = await res.json().catch(() => ({}));
+    setStatus(res.ok ? 'Deleted.' : data.error || 'Delete failed.');
+    if (res.ok) await load();
+  };
+
+  const previewImage = imageValue(form);
+  const previewImages = uniqueImages([previewImage, ...imageListValue(form, 'images')]);
+  const selectedId = String(form[config.idField] || '');
+
+  return (
+    <section className="border border-[#e0dbd4] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+      <div className="border-b border-[#eee8e1] p-5 md:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f1f35]">Homepage CMS</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Edit live storefront sections</h2>
+            <p className="mt-2 text-sm text-[#666666]">Select a section, edit content, preview it, then save to Firestore.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {configs.map(item => (
+              <button key={item.key} onClick={() => setActiveKey(item.key)} className={`px-4 py-2 text-sm font-medium transition ${item.key === activeKey ? 'bg-[#111111] text-white' : 'border border-[#ded8d0] bg-[#faf8f5] text-[#333333] hover:border-[#111111]'}`}>
+                {item.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-0 xl:grid-cols-[360px_minmax(0,1fr)_360px]">
+        <aside className="border-b border-[#eee8e1] p-5 md:p-6 xl:border-b-0 xl:border-r">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">{config.eyebrow}</p>
+              <h3 className="mt-1 text-xl font-semibold">Current {config.title}</h3>
+            </div>
+            <span className="bg-[#f1ede7] px-3 py-1 text-xs font-semibold text-[#666]">{items.length}</span>
+          </div>
+          <div className="mt-5 grid max-h-[620px] gap-3 overflow-auto pr-1">
+            {items.length === 0 && <p className="border border-dashed border-[#d8d2ca] p-5 text-sm text-[#777]">No saved items yet. A draft is ready in the editor.</p>}
+            {items.map(item => {
+              const id = String(item.id);
+              const itemImage = imageValue(item);
+              return (
+                <button key={id} onClick={() => setForm(item)} className={`flex items-center gap-3 border p-3 text-left transition ${selectedId === id ? 'border-[#111111] bg-[#f8f5f0]' : 'border-[#ebe6df] hover:border-[#c8beb4]'}`}>
+                  {config.key === 'notice' ? (
+                    <span className="flex h-16 w-16 items-center justify-center bg-[#111] text-xs font-semibold text-white">Notice</span>
+                  ) : itemImage ? (
+                    <img src={itemImage} alt="" className="h-16 w-16 bg-[#eee9e2] object-cover" />
+                  ) : (
+                    <span className="flex h-16 w-16 items-center justify-center bg-[#eee9e2] text-xs font-semibold text-[#777]">No image</span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{textValue(item, ['title', 'name', 'id'])}</span>
+                    <span className="mt-1 block truncate text-xs text-[#777]">{id}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <div className="border-b border-[#eee8e1] p-5 md:p-6 xl:border-b-0 xl:border-r">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-xl font-semibold">Editor</h3>
+            <button onClick={() => setForm(defaultItem(config, items))} className="border border-[#ded8d0] px-4 py-2 text-sm font-medium hover:border-[#111]">
+              {config.key === 'socials' ? 'Next social link' : 'New item'}
+            </button>
+          </div>
+
+          {config.key === 'socials' && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {socialPlatforms.map(option => {
+                const saved = socialItem(option.id, items);
+                const active = String(form.id).toLowerCase() === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setForm(saved)}
+                    className={`border px-4 py-2 text-sm font-semibold transition ${active ? 'border-[#111] bg-[#111] text-white' : 'border-[#ded8d0] bg-[#fbfaf8] text-[#333] hover:border-[#111]'}`}
+                  >
+                    {option.platform}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {config.fields.map(field => (
+              <label key={field.key} className={`${field.type === 'textarea' || field.type === 'image' || field.type === 'gallery' ? 'md:col-span-2' : ''} grid gap-2 text-sm font-medium text-[#333]`}>
+                {field.label}
+                {field.type === 'textarea' ? (
+                  <textarea value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: event.target.value })} className="min-h-28 border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                ) : field.type === 'checkbox' ? (
+                  <span className="flex items-center gap-3 border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 font-normal">
+                    <input type="checkbox" checked={Boolean(form[field.key])} onChange={event => setForm({ ...form, [field.key]: event.target.checked })} />
+                    Visible on storefront
+                  </span>
+                ) : field.type === 'datetime' ? (
+                  <input type="datetime-local" value={dateTimeLocalValue(form[field.key])} onChange={event => setForm({ ...form, [field.key]: dateTimeStoredValue(event.target.value) })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                ) : field.type === 'list' ? (
+                  <span className="grid gap-3">
+                    {field.key === 'sizes' && (
+                      <span className="flex flex-wrap gap-2">
+                        {sizeOptions.map(size => {
+                          const selected = listValue(form, field.key).includes(size);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setForm(current => {
+                                const currentList = listValue(current, field.key);
+                                const nextList = selected ? currentList.filter(item => item !== size) : [...currentList, size];
+                                return { ...current, [field.key]: nextList };
+                              })}
+                              className={`border px-3 py-2 text-xs font-semibold transition ${selected ? 'border-[#111] bg-[#111] text-white' : 'border-[#ded8d0] bg-white text-[#333] hover:border-[#111]'}`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </span>
+                    )}
+                    <input type="text" value={listValue(form, field.key).join(', ')} onChange={event => setForm({ ...form, [field.key]: event.target.value.split(',').map(item => item.trim()).filter(Boolean) })} placeholder={field.key === 'sizes' ? 'S, M, L, XL, XXL, custom size...' : undefined} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                  </span>
+                ) : field.type === 'gallery' ? (
+                  <span className="grid gap-3">
+                    <MediaPicker
+                      label={`${field.label} picker`}
+                      value=""
+                      folder={`saud-leather/${config.key}`}
+                      helper="Add up to 5 product detail images. The first image becomes the main image if none is set."
+                      onChange={url => setForm(current => {
+                        const nextImages = uniqueImages([url, ...imageListValue(current, field.key)]);
+                        return {
+                          ...current,
+                          image: current.image || url,
+                          [field.key]: nextImages,
+                        };
+                      })}
+                    />
+                    <span className="grid gap-3 sm:grid-cols-5">
+                      {imageListValue(form, field.key).map((image, index) => (
+                        <span key={image} className="group relative overflow-hidden border border-[#ded8d0] bg-[#f7f3ee]">
+                          <button
+                            type="button"
+                            onClick={() => setForm(current => ({ ...current, image }))}
+                            className="block aspect-square w-full"
+                          >
+                            <img src={image} alt={`Gallery image ${index + 1}`} className="h-full w-full object-cover" />
+                          </button>
+                          <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/70 px-2 py-1 text-[11px] text-white">
+                            <button type="button" onClick={() => setForm(current => ({ ...current, image }))} className="font-semibold">{form.image === image ? 'Main' : 'Set main'}</button>
+                            <button
+                              type="button"
+                              onClick={() => setForm(current => {
+                                const nextImages = imageListValue(current, field.key).filter(item => item !== image);
+                                return { ...current, [field.key]: nextImages, image: current.image === image ? nextImages[0] || '' : current.image };
+                              })}
+                              className="font-semibold text-white/80 hover:text-white"
+                            >
+                              Remove
+                            </button>
+                          </span>
+                        </span>
+                      ))}
+                      {Array.from({ length: Math.max(0, 5 - imageListValue(form, field.key).length) }).map((_, index) => (
+                        <span key={`empty-${index}`} className="flex aspect-square items-center justify-center border border-dashed border-[#d8d2ca] bg-[#fbfaf8] text-xs font-normal text-[#777]">
+                          Add image
+                        </span>
+                      ))}
+                    </span>
+                  </span>
+                ) : (
+                  <input type={field.type === 'number' ? 'number' : 'text'} value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value })} placeholder={fieldPlaceholder(config, field, form)} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                )}
+                {field.type === 'image' && (
+                  <MediaPicker
+                    label={`${field.label} picker`}
+                    value={String(form[field.key] || '')}
+                    folder={`saud-leather/${config.key}`}
+                    helper="Drag an image here, upload from device, or paste a URL."
+                    onChange={url => setForm(current => {
+                      const nextImages = field.key === 'image' && config.key === 'featured' ? uniqueImages([url, ...imageListValue(current, 'images')]) : imageListValue(current, 'images');
+                      return {
+                        ...current,
+                        [field.key]: url,
+                        ...(field.key === 'image' && config.key === 'featured' ? { images: nextImages } : {}),
+                      };
+                    })}
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button onClick={save} className="bg-[#111111] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8f1f35]">Save changes</button>
+            {selectedId && <button onClick={() => void remove(selectedId)} className="border border-[#8f1f35] px-5 py-2.5 text-sm font-semibold text-[#8f1f35] transition hover:bg-[#8f1f35] hover:text-white">Delete</button>}
+            <p className="text-sm text-[#666]">{status}</p>
+          </div>
+        </div>
+
+        <aside className="bg-[#f7f3ee] p-5 md:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f1f35]">Live preview</p>
+          <h3 className="mt-1 text-xl font-semibold">Current draft</h3>
+          <div className="mt-5 overflow-hidden border border-[#ded8d0] bg-white">
+            {config.key === 'notice' ? (
+              <div className="bg-[#111] p-5 text-white">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/55">{textValue(form, ['title'], 'Notice')}</p>
+                <p className="mt-3 text-lg font-semibold">{textValue(form, ['message'], 'Notice message appears here.')}</p>
+                {form.quote ? <p className="mt-2 text-sm italic text-white/75">&quot;{String(form.quote)}&quot;</p> : null}
+                {form.countdownTo ? <p className="mt-3 text-xs text-white/65">Countdown ends: {dateTimeLocalValue(form.countdownTo)}</p> : null}
+              </div>
+            ) : (
+              <div className="relative aspect-[4/3] bg-[#e8e2db]">
+                {previewImage ? <img src={previewImage} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-[#777]">Image preview</div>}
+                {config.key === 'hero' && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-5 text-white"><p className="text-2xl font-semibold leading-tight">{textValue(form, ['title'], 'Hero title')}</p><p className="mt-2 line-clamp-2 text-sm text-white/80">{textValue(form, ['description'], 'Hero description appears here.')}</p></div>}
+              </div>
+            )}
+            {config.key !== 'hero' && config.key !== 'notice' && (
+              <div className="p-5">
+                <p className="text-lg font-semibold">{textValue(form, ['title', 'name'], `${config.title} title`)}</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#666]">{textValue(form, ['description', 'text'], 'Short content preview appears here.')}</p>
+              </div>
+            )}
+            <div className="border-t border-[#eee8e1] p-4 text-xs text-[#777]">
+              <p>ID: {selectedId || 'new item'}</p>
+              <p className="mt-1">Collection: {config.path}</p>
+            </div>
+          </div>
+          {config.key === 'featured' && previewImages.length > 0 && (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {previewImages.slice(0, 3).map(image => <img key={image} src={image} alt="" className="aspect-square w-full border border-[#ded8d0] bg-white object-cover" />)}
+            </div>
+          )}
+        </aside>
+      </div>
+    </section>
+  );
+}

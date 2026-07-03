@@ -1,14 +1,37 @@
 ﻿'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { filterCategories, products as fallbackProducts, type Product } from '@/data/products';
+import type { Product } from '@/data/products';
 
 type FeaturedProductsProps = {
   products?: Product[];
 };
 
-export default function FeaturedProducts({ products = fallbackProducts }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products = [] }: FeaturedProductsProps) {
+  const [activeCategory, setActiveCategory] = useState('All');
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach(product => {
+      const category = product.category?.trim();
+      if (!category) return;
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+    });
+
+    const topCategories = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 5)
+      .map(([category]) => category);
+
+    return ['All', ...topCategories];
+  }, [products]);
+  const visibleProducts = useMemo(() => (
+    activeCategory === 'All' ? products : products.filter(product => product.category === activeCategory)
+  ), [activeCategory, products]);
+
+  if (!products.length) return null;
+
   return (
     <section id="featured" className="bg-white px-3 py-12 sm:px-4 md:px-6 lg:px-10">
       <div className="mb-6 flex items-center justify-between gap-3 sm:mb-7">
@@ -18,15 +41,20 @@ export default function FeaturedProducts({ products = fallbackProducts }: Featur
           <button className="icon-button h-8 w-8 rounded-full border border-[#dedede] sm:h-9 sm:w-9" aria-label="Next featured products"><ChevronRight size={16} /></button>
         </div>
       </div>
-      <div className="mb-7 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mb-9 sm:flex-wrap sm:overflow-visible font-body">
-        {filterCategories.map((category, index) => (
-          <button key={category} className={`font-body shrink-0 rounded-full border px-4 py-2 text-[11px] sm:px-5 sm:text-xs ${index === 0 ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#dedede] bg-white text-[#111111]'}`}>
+      <div className="mb-7 flex flex-nowrap gap-2 overflow-x-auto pb-1 font-body sm:mb-9 sm:flex-wrap sm:overflow-visible">
+        {categories.map(category => (
+          <button
+            key={category}
+            type="button"
+            onClick={() => setActiveCategory(category)}
+            className={`font-body shrink-0 rounded-full border px-4 py-2 text-[11px] sm:px-5 sm:text-xs ${activeCategory === category ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#dedede] bg-white text-[#111111]'}`}
+          >
             {category}
           </button>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-5 lg:grid-cols-4">
-        {products.slice(0, 4).map(product => (
+        {visibleProducts.slice(0, 4).map(product => (
           <Link key={product.id} href={product.linkHref || `/product/${product.id}`} className="group min-w-0 text-left font-body">
             <div className="mb-2 aspect-[4/5] overflow-hidden rounded-lg bg-[#f1f1f1] sm:mb-3 sm:rounded-xl">
               <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -45,4 +73,3 @@ export default function FeaturedProducts({ products = fallbackProducts }: Featur
     </section>
   );
 }
-

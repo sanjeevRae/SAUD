@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MapPin, Minus, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useCart } from '@/context/CartContext';
+import { type CheckoutOrder, useCart } from '@/context/CartContext';
 import { useCustomerAuth } from '@/context/CustomerAuthContext';
 
 const deliveryOptions = [
@@ -30,6 +30,7 @@ export default function Cart() {
     landmark: user?.landmark || '',
   });
   const [formError, setFormError] = useState('');
+  const [placedOrder, setPlacedOrder] = useState<CheckoutOrder | null>(null);
 
 
   useEffect(() => {
@@ -71,12 +72,17 @@ export default function Cart() {
       return;
     }
 
-    await checkout({
+    const order = await checkout({
       deliveryFee: delivery.fee,
       deliveryLabel: delivery.label,
       shippingAddress,
       voucherCode: voucherCode.trim(),
     });
+    if (order) {
+      setPlacedOrder(order);
+      setStep('cart');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -89,10 +95,53 @@ export default function Cart() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">Shopping cart</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{step === 'cart' ? 'Review your cart' : 'Checkout'}</h1>
           </div>
-          <Link href="/main-product" className="text-sm font-semibold underline underline-offset-4">Continue shopping</Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/profile#orders" className="inline-flex border border-[#111] px-4 py-2 text-sm font-semibold text-[#111] transition hover:bg-[#111] hover:!text-white">
+              Check your order status
+            </Link>
+            <Link href="/main-product" className="inline-flex px-1 py-2 text-sm font-semibold underline underline-offset-4">Continue shopping</Link>
+          </div>
         </div>
 
-        {items.length === 0 ? (
+        {placedOrder ? (
+          <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
+            <section className="bg-white p-5 shadow-sm sm:p-6">
+              <div className="border-b border-[#ededed] pb-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Order placed</p>
+                <h2 className="mt-2 text-2xl font-semibold">Your order is being processed</h2>
+                <p className="mt-2 text-sm text-[#666]">Order ID: <span className="font-semibold text-[#111]">{placedOrder.id}</span></p>
+              </div>
+              <div className="mt-5 grid gap-3">
+                {(placedOrder.items ?? []).map(item => (
+                  <div key={`${placedOrder.id}-${item.id}-${item.selectedSize ?? 'default'}`} className="grid gap-4 border border-[#ededed] p-3 sm:grid-cols-[72px_1fr_auto] sm:items-center">
+                    {item.image ? <img src={item.image} alt={item.name || 'Product'} className="h-[72px] w-[72px] bg-[#f3f3f3] object-cover" /> : <span className="h-[72px] w-[72px] bg-[#f3f3f3]" />}
+                    <div className="min-w-0">
+                      <p className="font-semibold">{item.name || 'Product'}</p>
+                      <p className="mt-1 text-sm text-[#666]">{item.category || '-'}{item.selectedSize ? ` / Size ${item.selectedSize}` : ''}</p>
+                    </div>
+                    <p className="text-sm font-semibold">Qty {item.quantity || 0} / Rs. {Number(item.price || 0).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <aside className="h-fit bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-xl font-semibold">Order status</h2>
+              <span className="mt-4 inline-flex bg-[#111] px-3 py-1.5 text-xs font-semibold text-white">
+                {placedOrder.status === 'pending_cod' ? 'Pending COD' : placedOrder.status || 'Pending'}
+              </span>
+              <div className="mt-5 space-y-3 text-sm">
+                <div className="flex justify-between gap-4"><span className="text-[#666]">Subtotal</span><span>Rs. {Number(placedOrder.subtotal || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#666]">Discount</span><span>- Rs. {Number(placedOrder.discount || 0).toFixed(2)}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#666]">Delivery</span><span>Rs. {Number(placedOrder.deliveryFee || 0).toFixed(2)}</span></div>
+                <div className="border-t border-[#ededed] pt-3 text-lg font-semibold"><div className="flex justify-between gap-4"><span>Total</span><span>Rs. {Number(placedOrder.total || 0).toFixed(2)}</span></div></div>
+              </div>
+              <div className="mt-6 grid gap-3">
+                <Link href="/profile#orders" className="inline-flex justify-center bg-[#111] px-5 py-3 text-sm font-semibold text-white">Track or edit order</Link>
+                <button onClick={() => setPlacedOrder(null)} className="border border-[#dedede] px-5 py-3 text-sm font-semibold">Continue shopping</button>
+              </div>
+            </aside>
+          </div>
+        ) : items.length === 0 ? (
           <div className="bg-white px-6 py-16 text-center shadow-sm">
             <h2 className="text-xl font-semibold">Your cart is empty</h2>
             <p className="mt-2 text-sm text-[#666]">Add products before checkout.</p>

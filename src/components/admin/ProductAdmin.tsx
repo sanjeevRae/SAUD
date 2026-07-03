@@ -24,6 +24,7 @@ const blank: ProductForm = {
 };
 
 const inputClass = 'border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm outline-none transition focus:border-[#111111]';
+const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free Size', 'One Size'];
 const csv = (value?: string[]) => value?.join(', ') ?? '';
 const list = (value: string) => value.split(',').map(item => item.trim()).filter(Boolean);
 const uniqueImages = (value: string[]) => Array.from(new Set(value.map(item => item.trim()).filter(Boolean))).slice(0, 5);
@@ -63,6 +64,13 @@ export default function ProductAdmin({ token }: Props) {
   const isEditingExisting = items.some(item => item.id === form.id);
   const gallery = images.length ? images : form.image ? [form.image] : [];
   const parsedColors = parseColors(colors);
+  const selectedSizes = list(sizes);
+
+  const toggleSize = (size: string) => {
+    const current = list(sizes);
+    const next = current.includes(size) ? current.filter(item => item !== size) : [...current, size];
+    setSizes(next.join(', '));
+  };
 
   const load = useCallback(async () => {
     setStatus('Loading products...');
@@ -195,8 +203,7 @@ export default function ProductAdmin({ token }: Props) {
             <p className="mt-2 text-sm text-[#666666]">Create, edit, preview, upload images, and publish product data to Firestore.</p>
           </div>
           <div className="flex flex-col gap-3">
-            <Link href={`/admin?userId=${encodeURIComponent(token)}#products`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em]" style={{
-  color: '#ffffff'}}>
+            <Link href={`/admin?userId=${encodeURIComponent(token)}#products`} className="inline-flex items-center justify-center border-2 border-[#111] bg-[#111] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.08em] !text-white transition hover:bg-white hover:!text-[#111]">
               View all products
             </Link>
             <div className="grid grid-cols-3 border border-[#ded8d0] bg-[#faf8f5] text-center">
@@ -282,7 +289,22 @@ export default function ProductAdmin({ token }: Props) {
               />
             </div>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Description<textarea value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} className={`${inputClass} min-h-28`} /></label>
-            <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Sizes<input value={sizes} onChange={event => setSizes(event.target.value)} placeholder="S, M, L, XL" className={inputClass} /></label>
+            <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">
+              Sizes
+              <div className="flex flex-wrap gap-2">
+                {sizeOptions.map(size => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => toggleSize(size)}
+                    className={`border px-3 py-2 text-xs font-semibold transition ${selectedSizes.includes(size) ? 'border-[#111] bg-[#111] text-white' : 'border-[#ded8d0] bg-white text-[#333] hover:border-[#111]'}`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              <input value={sizes} onChange={event => setSizes(event.target.value)} placeholder="S, M, L, XL, XXL, custom size..." className={inputClass} />
+            </label>
             <label className="grid gap-2 text-sm font-medium text-[#333] md:col-span-2">Colors<input value={colors} onChange={event => setColors(event.target.value)} placeholder="Olive:#556B2F, Black:#111111" className={inputClass} /></label>
             <div className="grid gap-3 text-sm font-medium text-[#333] md:col-span-2">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -364,4 +386,3 @@ export default function ProductAdmin({ token }: Props) {
     </section>
   );
 }
-

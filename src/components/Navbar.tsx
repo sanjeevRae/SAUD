@@ -91,11 +91,11 @@ export default function Navbar({ notices = [] }: NavbarProps) {
     .map(part => part[0]?.toUpperCase())
     .join('') || '?';
 
-  const renderProfileAvatar = (className = 'h-8 w-8') => user?.photo ? (
-    <img src={user.photo} alt={displayName} className={`${className} rounded-full object-cover ring-1 ring-[#e5e5e5]`} />
+  const renderProfileAvatar = (className = 'h-full w-full') => user?.photo ? (
+    <img src={user.photo} alt={displayName} className={`${className} rounded-full object-cover`} />
   ) : (
-    <span className={`${className} inline-flex items-center justify-center rounded-full bg-[#f3f3f3] text-[11px] font-semibold text-[#111111] ring-1 ring-[#e5e5e5]`}>
-      {user ? initials : '?'}
+    <span className={`${className} inline-flex items-center justify-center rounded-full bg-[#f3f3f3] text-[11px] font-semibold text-[#111111]`}>
+      {user ? initials : <UserRound size={17} strokeWidth={1.8} />}
     </span>
   );
   const openProductsMenu = (href: string, label: string) => {
@@ -317,13 +317,12 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                     setActiveCategoryMenu(null);
                     setIsAccountOpen(current => !current);
                   }}
-                  className="flex items-center gap-2 p-1 text-xs font-medium text-[#111111]"
+                  className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#e5e5e5] bg-white text-[#111111] shadow-sm transition hover:border-[#111111]"
                   aria-expanded={isAccountOpen}
                   aria-haspopup="menu"
+                  aria-label={displayName}
                 >
-                  {renderProfileAvatar('h-8 w-8')}
-                  <span className="max-w-[120px] truncate">{displayName}</span>
-                  <ChevronDown size={13} />
+                  {renderProfileAvatar()}
                 </button>
                 {isAccountOpen && (
                   <div className="absolute right-0 top-full z-[140] mt-3 w-56 border border-[#dedede] bg-white p-2 shadow-lg" role="menu">
@@ -364,13 +363,12 @@ export default function Navbar({ notices = [] }: NavbarProps) {
                 )}
               </div>
             ) : (
-              <button onClick={openLogin} className="hidden items-center gap-2 p-1 text-xs font-medium text-[#111111] md:flex">
-                {renderProfileAvatar('h-8 w-8')}
-                Login / Register
+              <button onClick={openLogin} className="hidden h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#e5e5e5] bg-white text-[#111111] shadow-sm transition hover:border-[#111111] md:inline-flex" aria-label="Login or register">
+                {renderProfileAvatar()}
               </button>
             )}
-            <button onClick={() => user ? setIsAccountOpen(current => !current) : openLogin()} className="md:hidden" aria-label="Profile">
-              {renderProfileAvatar('h-8 w-8')}
+            <button onClick={() => user ? setIsAccountOpen(current => !current) : openLogin()} className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#e5e5e5] bg-white md:hidden" aria-label="Profile">
+              {renderProfileAvatar()}
             </button>
             <button onClick={openSearch} className="md:hidden" aria-label="Search">
               <Search size={18} />
@@ -517,8 +515,6 @@ export default function Navbar({ notices = [] }: NavbarProps) {
     </>
   );
 }
-
-
 
 
 

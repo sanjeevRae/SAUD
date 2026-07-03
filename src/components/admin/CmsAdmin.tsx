@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MediaPicker from '@/components/admin/MediaPicker';
 
-type Field = { key: string; label: string; type?: 'text' | 'number' | 'textarea' | 'checkbox' | 'image' | 'gallery' | 'list' | 'datetime' };
+type Field = { key: string; label: string; type?: 'text' | 'number' | 'textarea' | 'checkbox' | 'image' | 'gallery' | 'list' | 'datetime'; placeholder?: string };
 type Config = { key: string; title: string; eyebrow: string; path: string; idField: string; fields: Field[] };
 type Item = Record<string, string | number | boolean | string[] | undefined>;
+const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free Size', 'One Size'];
+const socialPlatforms = [
+  { id: 'facebook', platform: 'Facebook', placeholder: 'https://facebook.com/your-page' },
+  { id: 'instagram', platform: 'Instagram', placeholder: 'https://instagram.com/your-page' },
+  { id: 'tiktok', platform: 'TikTok', placeholder: 'https://tiktok.com/@your-page' },
+];
 
 const configs: Config[] = [
   { key: 'notice', title: 'Notice Banner', eyebrow: 'Top message', path: 'homepage/noticeBanners/items', idField: 'id', fields: [
@@ -19,6 +25,9 @@ const configs: Config[] = [
   ]},
   { key: 'collections', title: 'Collections', eyebrow: 'Homepage carousel', path: 'homepage/collections/items', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'title', label: 'Title' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Collection link' }] },
   { key: 'categories', title: 'Categories', eyebrow: 'Shopping paths', path: 'categories', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'stock', label: 'Stock', type: 'number' }, { key: 'image', label: 'Image', type: 'image' }, { key: 'linkHref', label: 'Category link' }] },
+  { key: 'socials', title: 'Social Links', eyebrow: 'Footer buttons', path: 'homepage/socialLinks/items', idField: 'id', fields: [
+    { key: 'href', label: 'Social media link' }, { key: 'enabled', label: 'Enabled', type: 'checkbox' },
+  ]},
   { key: 'testimonials', title: 'Testimonials', eyebrow: 'Customer proof', path: 'testimonials', idField: 'id', fields: [{ key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'rating', label: 'Rating', type: 'number' }, { key: 'text', label: 'Text', type: 'textarea' }, { key: 'avatar', label: 'Avatar', type: 'image' }, { key: 'date', label: 'Date' }] },
 ];
 
@@ -57,6 +66,74 @@ function uniqueImages(images: string[]) {
   return Array.from(new Set(images.map(image => image.trim()).filter(Boolean))).slice(0, 5);
 }
 
+function listValue(item: Item, key: string) {
+  const value = item[key];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map(part => part.trim()).filter(Boolean);
+  return [];
+}
+
+function nextItemId(items: Item[]) {
+  const highest = items.reduce((max, item) => {
+    const numeric = Number(item.id);
+    return Number.isInteger(numeric) && numeric > max ? numeric : max;
+  }, 0);
+  return String(highest + 1);
+}
+
+function defaultItem(config: Config, items: Item[] = []): Item {
+  if (config.key === 'notice') return defaultNoticeItem();
+  if (config.key === 'featured') {
+    return {
+      id: nextItemId(items),
+      enabled: true,
+      price: 0,
+      stock: 0,
+      rating: 5,
+      featuredOrder: items.length + 1,
+      images: [],
+    };
+  }
+  if (config.key === 'socials') {
+    const next = socialPlatforms.find(option => !items.some(item => String(item.id).toLowerCase() === option.id)) ?? socialPlatforms[0];
+    return {
+      id: next.id,
+      platform: next.platform,
+      href: '',
+      enabled: true,
+    };
+  }
+  return { enabled: true };
+}
+
+function socialOption(item: Item) {
+  const key = `${String(item.id || '')} ${String(item.platform || '')}`.toLowerCase();
+  return socialPlatforms.find(option => key.includes(option.id) || key.includes(option.platform.toLowerCase()));
+}
+
+function normalizeSocialItem(item: Item) {
+  const social = socialOption(item);
+  if (!social) return null;
+  return {
+    ...item,
+    id: social.id,
+    platform: social.platform,
+    href: String(item.href || ''),
+  };
+}
+
+function socialItem(id: string, items: Item[]) {
+  const saved = items.find(item => String(item.id).toLowerCase() === id);
+  const option = socialPlatforms.find(item => item.id === id) ?? socialPlatforms[0];
+  return saved ?? { id: option.id, platform: option.platform, href: '', enabled: true };
+}
+
+function fieldPlaceholder(config: Config, field: Field, form: Item) {
+  if (field.placeholder) return field.placeholder;
+  if (config.key === 'socials' && field.key === 'href') return socialOption(form)?.placeholder;
+  return undefined;
+}
+
 function dateTimeLocalValue(value: Item[string]) {
   if (!value) return '';
   const date = new Date(String(value));
@@ -80,19 +157,35 @@ export default function CmsAdmin({ token }: { token: string }) {
     setStatus('Loading current content...');
     const res = await fetch(`/api/admin?action=cms&path=${encodeURIComponent(config.path)}`, { headers: { 'x-customer-id': token } });
     const data = await res.json();
-    const nextItems = data.items ?? [];
+    const loadedItems = data.items ?? [];
+    const nextItems = config.key === 'socials'
+      ? socialPlatforms
+          .map(option => loadedItems.map(normalizeSocialItem).find((item: Item | null) => item?.id === option.id))
+          .filter((item: Item | null): item is Item => Boolean(item))
+      : loadedItems;
     setItems(nextItems);
-    if (config.key === 'notice' && nextItems.length === 0) setForm(defaultNoticeItem());
+    setForm(current => {
+      if (config.key === 'socials') {
+        const currentId = String(current[config.idField] || '').toLowerCase();
+        const saved = nextItems.find((item: Item) => String(item.id).toLowerCase() === currentId);
+        return saved ?? defaultItem(config, nextItems);
+      }
+      if (config.key === 'featured' && !current.name) return defaultItem(config, nextItems);
+      return current[config.idField] ? current : defaultItem(config, nextItems);
+    });
     setStatus(res.ok ? '' : data.error || 'Could not load content.');
-  }, [config.key, config.path, token]);
+  }, [config, token]);
 
-  useEffect(() => { setForm(config.key === 'notice' ? defaultNoticeItem() : { enabled: true }); void load(); }, [config.key, config.path, load]);
+  useEffect(() => { setForm(defaultItem(config)); void load(); }, [config, load]);
 
   const save = async () => {
-    const id = String(form[config.idField] || '').trim();
+    const social = config.key === 'socials' ? socialOption(form) : undefined;
+    if (config.key === 'socials' && !social) { setStatus('Choose Facebook, Instagram, or TikTok.'); return; }
+    const payload = social ? { ...form, id: social.id, platform: social.platform, href: String(form.href || '').trim() } : form;
+    const id = String(payload[config.idField] || '').trim();
     if (!id) { setStatus('ID required.'); return; }
     setStatus('Saving changes...');
-    const res = await fetch('/api/admin?action=cms', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-customer-id': token }, body: JSON.stringify({ path: config.path, id, data: form }) });
+    const res = await fetch('/api/admin?action=cms', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-customer-id': token }, body: JSON.stringify({ path: config.path, id, data: payload }) });
     const data = await res.json().catch(() => ({}));
     setStatus(res.ok ? 'Saved. Preview and storefront will update from Firestore.' : data.error || 'Save failed.');
     if (res.ok) await load();
@@ -166,8 +259,29 @@ export default function CmsAdmin({ token }: { token: string }) {
         <div className="border-b border-[#eee8e1] p-5 md:p-6 xl:border-b-0 xl:border-r">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-xl font-semibold">Editor</h3>
-            <button onClick={() => setForm(config.key === 'notice' ? defaultNoticeItem() : { enabled: true })} className="border border-[#ded8d0] px-4 py-2 text-sm font-medium hover:border-[#111]">New item</button>
+            <button onClick={() => setForm(defaultItem(config, items))} className="border border-[#ded8d0] px-4 py-2 text-sm font-medium hover:border-[#111]">
+              {config.key === 'socials' ? 'Next social link' : 'New item'}
+            </button>
           </div>
+
+          {config.key === 'socials' && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {socialPlatforms.map(option => {
+                const saved = socialItem(option.id, items);
+                const active = String(form.id).toLowerCase() === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setForm(saved)}
+                    className={`border px-4 py-2 text-sm font-semibold transition ${active ? 'border-[#111] bg-[#111] text-white' : 'border-[#ded8d0] bg-[#fbfaf8] text-[#333] hover:border-[#111]'}`}
+                  >
+                    {option.platform}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {config.fields.map(field => (
@@ -183,7 +297,30 @@ export default function CmsAdmin({ token }: { token: string }) {
                 ) : field.type === 'datetime' ? (
                   <input type="datetime-local" value={dateTimeLocalValue(form[field.key])} onChange={event => setForm({ ...form, [field.key]: dateTimeStoredValue(event.target.value) })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
                 ) : field.type === 'list' ? (
-                  <input type="text" value={Array.isArray(form[field.key]) ? (form[field.key] as string[]).join(', ') : String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: event.target.value.split(',').map(item => item.trim()).filter(Boolean) })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                  <span className="grid gap-3">
+                    {field.key === 'sizes' && (
+                      <span className="flex flex-wrap gap-2">
+                        {sizeOptions.map(size => {
+                          const selected = listValue(form, field.key).includes(size);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setForm(current => {
+                                const currentList = listValue(current, field.key);
+                                const nextList = selected ? currentList.filter(item => item !== size) : [...currentList, size];
+                                return { ...current, [field.key]: nextList };
+                              })}
+                              className={`border px-3 py-2 text-xs font-semibold transition ${selected ? 'border-[#111] bg-[#111] text-white' : 'border-[#ded8d0] bg-white text-[#333] hover:border-[#111]'}`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </span>
+                    )}
+                    <input type="text" value={listValue(form, field.key).join(', ')} onChange={event => setForm({ ...form, [field.key]: event.target.value.split(',').map(item => item.trim()).filter(Boolean) })} placeholder={field.key === 'sizes' ? 'S, M, L, XL, XXL, custom size...' : undefined} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                  </span>
                 ) : field.type === 'gallery' ? (
                   <span className="grid gap-3">
                     <MediaPicker
@@ -233,7 +370,7 @@ export default function CmsAdmin({ token }: { token: string }) {
                     </span>
                   </span>
                 ) : (
-                  <input type={field.type === 'number' ? 'number' : 'text'} value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value })} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
+                  <input type={field.type === 'number' ? 'number' : 'text'} value={String(form[field.key] ?? '')} onChange={event => setForm({ ...form, [field.key]: field.type === 'number' ? Number(event.target.value) : event.target.value })} placeholder={fieldPlaceholder(config, field, form)} className="border border-[#ded8d0] bg-[#fbfaf8] px-3 py-2 text-sm font-normal outline-none transition focus:border-[#111111]" />
                 )}
                 {field.type === 'image' && (
                   <MediaPicker

@@ -1,7 +1,7 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, Mail, MapPin, Minus, PackageCheck, Phone, Plus, ShoppingBag, Star, Trash2, UserRound } from 'lucide-react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, ChevronDown, Mail, MapPin, Minus, PackageCheck, Phone, Plus, RefreshCcw, ShoppingBag, Star, Trash2, UserRound, XCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -32,9 +32,15 @@ type OrderItem = {
 type CustomerOrder = {
   id: string;
   items?: OrderItem[];
+  subtotal?: number;
+  discount?: number;
+  deliveryFee?: number;
+  deliveryLabel?: string;
   total?: number;
   status?: string;
+  shippingAddress?: Record<string, string>;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 type ReviewDraft = {
@@ -84,6 +90,10 @@ function formatDate(value?: string) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function customerNameFallback(order: CustomerOrder) {
+  return order.shippingAddress?.fullName || 'Customer';
+}
+
 const statusLabels: Record<string, string> = {
   pending_cod: 'Pending COD',
   processing: 'Processing',
@@ -104,6 +114,11 @@ export default function ProfileDashboard() {
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
   const [reviewStatus, setReviewStatus] = useState('');
+  const [editingOrderId, setEditingOrderId] = useState('');
+  const [orderDrafts, setOrderDrafts] = useState<Record<string, Record<string, string>>>({});
+  const [orderActionStatus, setOrderActionStatus] = useState('');
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -119,23 +134,24 @@ export default function ProfileDashboard() {
     });
   }, [user]);
 
-  useEffect(() => {
+  const loadOrdersAndReviews = useCallback(async () => {
     if (!user) return;
-    const loadOrdersAndReviews = async () => {
-      setOrdersStatus('Loading your orders...');
-      const [ordersResponse, reviewsResponse] = await Promise.all([
-        fetch(`/api/customer?action=orders&userId=${encodeURIComponent(user.id)}`),
-        fetch(`/api/customer?action=reviews&userId=${encodeURIComponent(user.id)}`),
-      ]);
-      const ordersData = await ordersResponse.json().catch(() => ({}));
-      const reviewsData = await reviewsResponse.json().catch(() => ({}));
-      setOrders(ordersData.orders ?? []);
-      setReviews(reviewsData.reviews ?? []);
-      setOrdersStatus(ordersResponse.ok ? '' : ordersData.error || 'Could not load orders.');
-      if (!reviewsResponse.ok) setReviewStatus(reviewsData.error || 'Could not load reviews.');
-    };
-    void loadOrdersAndReviews();
+    setOrdersStatus('Loading your orders...');
+    const [ordersResponse, reviewsResponse] = await Promise.all([
+      fetch(`/api/customer?action=orders&userId=${encodeURIComponent(user.id)}`),
+      fetch(`/api/customer?action=reviews&userId=${encodeURIComponent(user.id)}`),
+    ]);
+    const ordersData = await ordersResponse.json().catch(() => ({}));
+    const reviewsData = await reviewsResponse.json().catch(() => ({}));
+    setOrders(ordersData.orders ?? []);
+    setReviews(reviewsData.reviews ?? []);
+    setOrdersStatus(ordersResponse.ok ? '' : ordersData.error || 'Could not load orders.');
+    if (!reviewsResponse.ok) setReviewStatus(reviewsData.error || 'Could not load reviews.');
   }, [user]);
+
+  useEffect(() => {
+    void loadOrdersAndReviews();
+  }, [loadOrdersAndReviews]);
 
   const displayName = form.name.trim() || user?.name || 'Customer';
   const completion = useMemo(() => {
@@ -227,6 +243,71 @@ export default function ProfileDashboard() {
     setReviewStatus('Review deleted.');
   };
 
+  const canChangeOrder = (order: CustomerOrder) => ['pending_cod', 'processing'].includes(order.status || 'pending_cod');
+
+  const startEditOrder = (order: CustomerOrder) => {
+    setEditingOrderId(order.id);
+    setOrderActionStatus('');
+    setOrderDrafts(current => ({
+      ...current,
+      [order.id]: {
+        fullName: order.shippingAddress?.fullName || '',
+        phone: order.shippingAddress?.phone || '',
+        email: order.shippingAddress?.email || '',
+        city: order.shippingAddress?.city || '',
+        area: order.shippingAddress?.area || '',
+        address: order.shippingAddress?.address || '',
+        landmark: order.shippingAddress?.landmark || '',
+      },
+    }));
+  };
+
+  const updateOrderDraft = (orderId: string, field: string, value: string) => {
+    setOrderDrafts(current => ({ ...current, [orderId]: { ...(current[orderId] ?? {}), [field]: value } }));
+  };
+
+  const saveOrderDetails = async (order: CustomerOrder) => {
+    if (!user) return;
+    const draft = orderDrafts[order.id] ?? {};
+    const required = ['fullName', 'phone', 'city', 'area', 'address'];
+    if (required.some(field => !String(draft[field] || '').trim())) {
+      setOrderActionStatus('Fill in name, phone, city, area, and address.');
+      return;
+    }
+    setOrderActionStatus('Updating order details...');
+    const response = await fetch('/api/customer?action=orders', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, orderId: order.id, intent: 'shipping', shippingAddress: draft }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setOrderActionStatus(data.error || 'Could not update order details.');
+      return;
+    }
+    setOrders(current => current.map(item => item.id === order.id ? data.order : item));
+    setEditingOrderId('');
+    setOrderActionStatus('Order details updated.');
+  };
+
+  const cancelOrder = async (order: CustomerOrder) => {
+    if (!user || !confirm('Cancel this order?')) return;
+    setOrderActionStatus('Cancelling order...');
+    const response = await fetch('/api/customer?action=orders', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, orderId: order.id, intent: 'cancel' }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setOrderActionStatus(data.error || 'Could not cancel order.');
+      return;
+    }
+    setOrders(current => current.map(item => item.id === order.id ? data.order : item));
+    setEditingOrderId('');
+    setOrderActionStatus('Order cancelled.');
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f2ee] text-[#111]">
       <Navbar />
@@ -271,109 +352,144 @@ export default function ProfileDashboard() {
 
             <section className="space-y-6">
               <form onSubmit={submit} className="border border-[#e2ddd6] bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex flex-col gap-2 border-b border-[#eee8e1] pb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Account settings</p>
-                  <h2 className="text-2xl font-semibold">Contact and shipping details</h2>
-                  <p className="text-sm text-[#666]">These details are used to prefill checkout and delivery information.</p>
+                <div className={`flex flex-col gap-3 ${isAccountOpen ? 'border-b border-[#eee8e1] pb-5' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAccountOpen(current => !current)}
+                    className="flex w-full items-center justify-between gap-4 text-left"
+                    aria-expanded={isAccountOpen}
+                  >
+                    <span>
+                      <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Account settings</span>
+                      <span className="mt-1 block text-2xl font-semibold">Contact and shipping details</span>
+                      <span className="mt-1 block text-sm text-[#666]">{completion}% complete / {form.city || 'No city set'}{form.area ? `, ${form.area}` : ''}</span>
+                    </span>
+                    <ChevronDown size={20} className={`shrink-0 transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} />
+                  </button>
                 </div>
 
-                <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                  <section className="grid gap-4">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold"><UserRound size={18} /> Contact info</h3>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Full name
-                      <input value={form.name} onChange={event => setField('name', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Email
-                      <span className="relative block">
-                        <Mail size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
-                        <input value={form.email} onChange={event => setField('email', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
-                      </span>
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Phone
-                      <span className="relative block">
-                        <Phone size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
-                        <input value={form.phone} onChange={event => setField('phone', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
-                      </span>
-                    </label>
-                </section>
+                {isAccountOpen && (
+                  <>
+                    <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                      <section className="grid gap-4">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold"><UserRound size={18} /> Contact info</h3>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Full name
+                          <input value={form.name} onChange={event => setField('name', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
+                        </label>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Email
+                          <span className="relative block">
+                            <Mail size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
+                            <input value={form.email} onChange={event => setField('email', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
+                          </span>
+                        </label>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Phone
+                          <span className="relative block">
+                            <Phone size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#777]" />
+                            <input value={form.phone} onChange={event => setField('phone', event.target.value)} className="h-12 w-full border border-[#dedede] bg-[#fbfaf8] pl-11 pr-4 text-sm outline-none focus:border-[#111]" />
+                          </span>
+                        </label>
+                    </section>
 
-                  <section className="grid gap-4">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold"><MapPin size={18} /> Shipping address</h3>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="grid gap-2 text-sm font-medium">
-                        City
-                        <input value={form.city} onChange={event => setField('city', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
-                      </label>
-                      <label className="grid gap-2 text-sm font-medium">
-                        Area
-                        <input value={form.area} onChange={event => setField('area', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
-                      </label>
+                      <section className="grid gap-4">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold"><MapPin size={18} /> Shipping address</h3>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="grid gap-2 text-sm font-medium">
+                            City
+                            <input value={form.city} onChange={event => setField('city', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
+                          </label>
+                          <label className="grid gap-2 text-sm font-medium">
+                            Area
+                            <input value={form.area} onChange={event => setField('area', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
+                          </label>
+                        </div>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Full delivery address
+                          <textarea value={form.address} onChange={event => setField('address', event.target.value)} className="min-h-28 border border-[#dedede] bg-[#fbfaf8] px-4 py-3 text-sm outline-none focus:border-[#111]" />
+                        </label>
+                        <label className="grid gap-2 text-sm font-medium">
+                          Landmark
+                          <input value={form.landmark} onChange={event => setField('landmark', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
+                        </label>
+                      </section>
                     </div>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Full delivery address
-                      <textarea value={form.address} onChange={event => setField('address', event.target.value)} className="min-h-28 border border-[#dedede] bg-[#fbfaf8] px-4 py-3 text-sm outline-none focus:border-[#111]" />
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      Landmark
-                      <input value={form.landmark} onChange={event => setField('landmark', event.target.value)} className="h-12 border border-[#dedede] bg-[#fbfaf8] px-4 text-sm outline-none focus:border-[#111]" />
-                    </label>
-                  </section>
-                </div>
 
-                <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[#eee8e1] pt-5">
-                  <button className="bg-[#111] px-5 py-3 text-sm font-semibold text-white hover:bg-[#8f1f35]">Save changes</button>
-                  {authStatus && <p className="text-sm text-[#666]">{authStatus}</p>}
-                </div>
+                    <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[#eee8e1] pt-5">
+                      <button className="bg-[#111] px-5 py-3 text-sm font-semibold text-white hover:bg-[#8f1f35]">Save changes</button>
+                      {authStatus && <p className="text-sm text-[#666]">{authStatus}</p>}
+                    </div>
+                  </>
+                )}
               </form>
 
               <div className="border border-[#e2ddd6] bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex flex-col gap-2 border-b border-[#eee8e1] pb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Cart</p>
-                  <h2 className="text-2xl font-semibold">Cart management</h2>
+                <div className={`flex flex-col gap-3 ${isCartOpen ? 'border-b border-[#eee8e1] pb-5' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCartOpen(current => !current)}
+                    className="flex w-full items-center justify-between gap-4 text-left"
+                    aria-expanded={isCartOpen}
+                  >
+                    <span>
+                      <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Cart</span>
+                      <span className="mt-1 block text-2xl font-semibold">Cart management</span>
+                      <span className="mt-1 block text-sm text-[#666]">{items.length ? `${items.length} item${items.length === 1 ? '' : 's'} / Rs. ${totalPrice.toFixed(2)}` : 'No items in cart'}</span>
+                    </span>
+                    <ChevronDown size={20} className={`shrink-0 transition-transform ${isCartOpen ? 'rotate-180' : ''}`} />
+                  </button>
                 </div>
 
-                {items.length === 0 ? (
-                  <p className="mt-5 border border-dashed border-[#dedede] p-6 text-sm text-[#666]">No items in cart.</p>
-                ) : (
-                  <div className="mt-5 space-y-3">
-                    {items.map(item => (
-                      <div key={`${item.id}-${item.selectedSize ?? 'default'}`} className="grid gap-4 border border-[#eee8e1] p-3 sm:grid-cols-[72px_1fr_auto] sm:items-center">
-                        <img src={item.image} alt="" className="h-[72px] w-[72px] object-cover" />
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{item.name}</p>
-                          <p className="mt-1 text-sm text-[#666]">Rs. {item.price.toFixed(2)} {item.selectedSize ? `/ Size ${item.selectedSize}` : ''}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => updateQuantity(item.id, item.quantity - 1, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede]" aria-label="Decrease quantity"><Minus size={15} /></button>
-                          <span className="min-w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede]" aria-label="Increase quantity"><Plus size={15} /></button>
-                          <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede] text-[#8f1f35]" aria-label="Remove item"><Trash2 size={15} /></button>
-                        </div>
+                {isCartOpen && (
+                  <>
+                    {items.length === 0 ? (
+                      <p className="mt-5 border border-dashed border-[#dedede] p-6 text-sm text-[#666]">No items in cart.</p>
+                    ) : (
+                      <div className="mt-5 space-y-3">
+                        {items.map(item => (
+                          <div key={`${item.id}-${item.selectedSize ?? 'default'}`} className="grid gap-4 border border-[#eee8e1] p-3 sm:grid-cols-[72px_1fr_auto] sm:items-center">
+                            <img src={item.image} alt="" className="h-[72px] w-[72px] object-cover" />
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold">{item.name}</p>
+                              <p className="mt-1 text-sm text-[#666]">Rs. {item.price.toFixed(2)} {item.selectedSize ? `/ Size ${item.selectedSize}` : ''}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => updateQuantity(item.id, item.quantity - 1, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede]" aria-label="Decrease quantity"><Minus size={15} /></button>
+                              <span className="min-w-8 text-center text-sm font-semibold">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede]" aria-label="Increase quantity"><Plus size={15} /></button>
+                              <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="grid h-9 w-9 place-items-center border border-[#dedede] text-[#8f1f35]" aria-label="Remove item"><Trash2 size={15} /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                <div className="mt-5 border-t border-[#eee8e1] pt-4">
-                  <p className="text-sm">Subtotal Rs. {totalPrice.toFixed(2)}</p>
-                  <p className="text-sm">Delivery Rs. 120.00</p>
-                  <p className="mt-2 font-semibold">Total Rs. {(totalPrice + 120).toFixed(2)}</p>
-                  <button onClick={() => void checkout()} className="mt-4 inline-flex items-center gap-2 bg-[#111] px-5 py-3 text-sm font-semibold text-white"><ShoppingBag size={16} /> Checkout COD</button>
-                  {checkoutStatus && <p className="mt-3 text-sm text-[#666]">{checkoutStatus}</p>}
-                </div>
+                    <div className="mt-5 border-t border-[#eee8e1] pt-4">
+                      <p className="text-sm">Subtotal Rs. {totalPrice.toFixed(2)}</p>
+                      <p className="text-sm">Delivery Rs. 120.00</p>
+                      <p className="mt-2 font-semibold">Total Rs. {(totalPrice + 120).toFixed(2)}</p>
+                      <button onClick={() => void checkout()} className="mt-4 inline-flex items-center gap-2 bg-[#111] px-5 py-3 text-sm font-semibold text-white"><ShoppingBag size={16} /> Checkout COD</button>
+                      {checkoutStatus && <p className="mt-3 text-sm text-[#666]">{checkoutStatus}</p>}
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="border border-[#e2ddd6] bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex flex-col gap-2 border-b border-[#eee8e1] pb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Orders</p>
-                  <h2 className="text-2xl font-semibold">Order history and reviews</h2>
-                  <p className="text-sm text-[#666]">Track old and new orders, then review products you purchased.</p>
+              <div id="orders" className="border border-[#e2ddd6] bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex flex-col gap-4 border-b border-[#eee8e1] pb-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f1f35]">Orders</p>
+                    <h2 className="text-2xl font-semibold">Order status and details</h2>
+                    <p className="text-sm text-[#666]">Track what you ordered, edit delivery details before shipment, or cancel eligible orders.</p>
+                  </div>
+                  <button type="button" onClick={() => void loadOrdersAndReviews()} className="inline-flex items-center gap-2 border border-[#dedede] px-4 py-2 text-sm font-semibold hover:border-[#111]">
+                    <RefreshCcw size={15} /> Refresh status
+                  </button>
                 </div>
 
                 {ordersStatus && <p className="mt-4 text-sm text-[#666]">{ordersStatus}</p>}
+                {orderActionStatus && <p className="mt-4 text-sm text-[#666]">{orderActionStatus}</p>}
                 {reviewStatus && <p className="mt-4 text-sm text-[#666]">{reviewStatus}</p>}
 
                 <div className="mt-5 grid gap-4">
@@ -384,12 +500,72 @@ export default function ProfileDashboard() {
                         <div>
                           <p className="font-semibold">{order.id}</p>
                           <p className="mt-1 text-sm text-[#666]">{formatDate(order.createdAt)} / {money(order.total)}</p>
+                          {order.updatedAt && <p className="mt-1 text-xs text-[#777]">Last updated {formatDate(order.updatedAt)}</p>}
                         </div>
-                        <span className="inline-flex w-fit items-center gap-2 bg-[#111] px-3 py-1.5 text-xs font-semibold text-white">
-                          <PackageCheck size={14} /> {statusLabels[order.status || ''] || order.status || 'Pending'}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex w-fit items-center gap-2 px-3 py-1.5 text-xs font-semibold text-white ${order.status === 'cancelled' || order.status === 'returned' ? 'bg-[#8f1f35]' : order.status === 'delivered' ? 'bg-[#166534]' : 'bg-[#111]'}`}>
+                            <PackageCheck size={14} /> {statusLabels[order.status || ''] || order.status || 'Pending'}
+                          </span>
+                          {canChangeOrder(order) && (
+                            <>
+                              <button type="button" onClick={() => startEditOrder(order)} className="border border-[#dedede] bg-white px-3 py-1.5 text-xs font-semibold hover:border-[#111]">Change details</button>
+                              <button type="button" onClick={() => void cancelOrder(order)} className="inline-flex items-center gap-1 border border-[#8f1f35] bg-white px-3 py-1.5 text-xs font-semibold text-[#8f1f35] hover:bg-[#8f1f35] hover:text-white"><XCircle size={13} /> Cancel</button>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div className="grid gap-4 p-4">
+                        <div className="grid gap-4 border border-[#eee8e1] bg-[#fbfaf8] p-4 lg:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">Delivery details</p>
+                            {editingOrderId === order.id ? (
+                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                {[
+                                  ['fullName', 'Full name'],
+                                  ['phone', 'Phone'],
+                                  ['email', 'Email'],
+                                  ['city', 'City'],
+                                  ['area', 'Area'],
+                                  ['landmark', 'Landmark'],
+                                ].map(([field, label]) => (
+                                  <input
+                                    key={field}
+                                    value={orderDrafts[order.id]?.[field] ?? ''}
+                                    onChange={event => updateOrderDraft(order.id, field, event.target.value)}
+                                    placeholder={label}
+                                    className="h-11 border border-[#dedede] bg-white px-3 text-sm outline-none focus:border-[#111]"
+                                  />
+                                ))}
+                                <textarea
+                                  value={orderDrafts[order.id]?.address ?? ''}
+                                  onChange={event => updateOrderDraft(order.id, 'address', event.target.value)}
+                                  placeholder="Full delivery address"
+                                  className="min-h-20 border border-[#dedede] bg-white px-3 py-2 text-sm outline-none focus:border-[#111] sm:col-span-2"
+                                />
+                                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                                  <button type="button" onClick={() => void saveOrderDetails(order)} className="bg-[#111] px-4 py-2 text-sm font-semibold text-white hover:bg-[#8f1f35]">Save details</button>
+                                  <button type="button" onClick={() => setEditingOrderId('')} className="border border-[#dedede] px-4 py-2 text-sm font-semibold hover:border-[#111]">Close</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mt-3 text-sm leading-6 text-[#555]">
+                                <p className="font-semibold text-[#111]">{order.shippingAddress?.fullName || customerNameFallback(order)}</p>
+                                <p>{order.shippingAddress?.phone || '-'}</p>
+                                <p>{order.shippingAddress?.address || '-'}</p>
+                                <p>{[order.shippingAddress?.area, order.shippingAddress?.city, order.shippingAddress?.landmark].filter(Boolean).join(', ') || '-'}</p>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8f1f35]">Order total</p>
+                            <div className="mt-3 space-y-2 text-sm">
+                              <div className="flex justify-between gap-4"><span className="text-[#666]">Subtotal</span><span>{money(order.subtotal)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-[#666]">Discount</span><span>- {money(order.discount)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-[#666]">{order.deliveryLabel || 'Delivery'}</span><span>{money(order.deliveryFee)}</span></div>
+                              <div className="border-t border-[#eee8e1] pt-2 font-semibold"><div className="flex justify-between gap-4"><span>Total</span><span>{money(order.total)}</span></div></div>
+                            </div>
+                          </div>
+                        </div>
                         {(order.items ?? []).map(item => {
                           const key = String(item.id || '');
                           const existingReview = reviewsByProduct[key];

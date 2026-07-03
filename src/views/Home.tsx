@@ -30,7 +30,7 @@ export default function Home({ homepage }: HomeProps) {
         <WhyChooseUs />
         <Testimonials testimonials={homepage?.testimonials} />
       </main>
-      <Footer />
+      <Footer socialLinks={homepage?.socialLinks} />
     </div>
   );
 }

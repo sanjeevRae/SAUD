@@ -1,16 +1,16 @@
 {
-  "/api/customer/route": "/api/customer",
   "/api/admin/route": "/api/admin",
-  "/api/storefront/route": "/api/storefront",
   "/_not-found/page": "/_not-found",
-  "/api/admin/seed/route": "/api/admin/seed",
+  "/api/storefront/route": "/api/storefront",
+  "/api/customer/route": "/api/customer",
   "/api/admin/cms/route": "/api/admin/cms",
+  "/api/admin/seed/route": "/api/admin/seed",
   "/api/products/route": "/api/products",
   "/main-product/page": "/main-product",
   "/product/[id]/page": "/product/[id]",
+  "/admin/page": "/admin",
   "/profile/page": "/profile",
   "/admin/insights/page": "/admin/insights",
-  "/admin/page": "/admin",
   "/cart/page": "/cart",
   "/page": "/"
 }

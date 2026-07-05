@@ -35,7 +35,7 @@ export default function MainProduct({ products = fallbackProducts, activeCategor
           <div>
             <p className="font-body text-xs uppercase tracking-[0.2em] text-[#8f1f35]">{activeCategory || 'All products'}</p>
             <h1 className="font-display mt-2 text-4xl font-semibold sm:text-5xl">{heading}</h1>
-            <p className="mt-3 font-body text-sm text-[#666666]">{products.length} product{products.length === 1 ? '' : 's'} found from Firestore.</p>
+            <p className="mt-3 font-body text-sm text-[#666666]">{products.length} product{products.length === 1 ? '' : 's'} Available</p>
           </div>
           <form onSubmit={submitSearch} className="flex w-full max-w-xl overflow-hidden rounded-full border border-[#dedede] bg-white shadow-sm">
             <input value={searchValue} onChange={event => setSearchValue(event.target.value)} placeholder="Search name, size, color, category..." className="min-w-0 flex-1 px-5 py-3 text-sm outline-none" />

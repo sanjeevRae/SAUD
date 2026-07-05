@@ -27,6 +27,7 @@ export type Collection = {
   id: string;
   title: string;
   image: string;
+  productId?: string;
   linkHref?: string;
 };
 
@@ -259,6 +260,5 @@ export const curatedPicks = [
 ];
 
 export const filterCategories = ['All', 'Knitwear', 'Dresses', 'T-Shirt', 'Cami', 'Polo'];
-
 
 

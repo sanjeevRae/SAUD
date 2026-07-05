@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryDocuments } from '@/lib/firestoreAdmin';
-import { getProductsByQuery } from '@/lib/storefront';
+import { getProductById, getProductsByQuery } from '@/lib/storefront';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +27,16 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json({ products });
+    }
+
+    if (action === 'detail') {
+      const productId = String(request.nextUrl.searchParams.get('productId') || '').trim();
+      if (!productId) return NextResponse.json({ error: 'Missing product id.' }, { status: 400 });
+
+      const product = await getProductById(productId);
+      if (!product) return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
+
+      return NextResponse.json({ product });
     }
 
     if (action === 'reviews') {

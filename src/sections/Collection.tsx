@@ -1,33 +1,52 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, MoveUpRight } from 'lucide-react';
 import { collections as fallbackCollections, type Collection as StoreCollection } from '@/data/products';
-
-const getCollectionStrip = (collections: StoreCollection[]) => [
-  ...collections,
-  { id: '6', title: 'Evening Minimal', image: '/product_07.jpg', linkHref: '/main-product?collection=evening-minimal' },
-  { id: '7', title: 'Soft Street', image: '/product_08.jpg', linkHref: '/main-product?collection=soft-street' },
-];
 
 type CollectionProps = {
   collections?: StoreCollection[];
 };
 
-export default function Collection({ collections = fallbackCollections }: CollectionProps) {
-  const collectionStrip = getCollectionStrip(collections);
-  const wrapIndex = (index: number) => ((index % collectionStrip.length) + collectionStrip.length) % collectionStrip.length;
-  const [activeIndex, setActiveIndex] = useState(3);
-  const active = collectionStrip[activeIndex] ?? collectionStrip[0];
+type CollectionItem = {
+  id: string;
+  title: string;
+  image: string;
+  detailHref: string;
+};
+
+function collectionToCollectionItem(collection: StoreCollection): CollectionItem {
+  const productId = collection.productId || collection.id;
+
+  return {
+    id: collection.id,
+    title: collection.title,
+    image: collection.image,
+    detailHref: collection.linkHref || `/product/${encodeURIComponent(productId)}`,
+  };
+}
+
+export default function Collection({ collections }: CollectionProps) {
+  const router = useRouter();
+  const items = (collections?.length ? collections : fallbackCollections).map(collectionToCollectionItem);
+  const wrapIndex = (index: number) => ((index % items.length) + items.length) % items.length;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const safeActiveIndex = wrapIndex(activeIndex);
+  const active = items[safeActiveIndex] ?? items[0];
   const navigate = (direction: 'prev' | 'next') => {
     setActiveIndex(previous => wrapIndex(direction === 'prev' ? previous - 1 : previous + 1));
   };
 
+  const openItem = (item: CollectionItem) => {
+    router.push(item.detailHref);
+  };
+
   const getOffset = (index: number) => {
-    let offset = index - activeIndex;
-    if (offset > collectionStrip.length / 2) offset -= collectionStrip.length;
-    if (offset < -collectionStrip.length / 2) offset += collectionStrip.length;
+    let offset = index - safeActiveIndex;
+    if (offset > items.length / 2) offset -= items.length;
+    if (offset < -items.length / 2) offset += items.length;
     return offset;
   };
 
@@ -42,7 +61,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
     const slots: Record<number, { left: string; width: string; height: string; opacity: number; scale: number; zIndex: number; pointerEvents: 'auto' | 'none' }> = {
       [-2]: { left: '-10%', width: 'min(34vw, 132px)', height: '255px', opacity: 0, scale: 0.9, zIndex: 1, pointerEvents: 'none' },
       [-1]: { left: '12%', width: 'min(34vw, 132px)', height: '255px', opacity: 0.42, scale: 0.94, zIndex: 4, pointerEvents: 'auto' },
-      [0]: { left: '50%', width: 'min(78vw, 310px)', height: '360px', opacity: 1, scale: 1, zIndex: 10, pointerEvents: 'none' },
+      [0]: { left: '50%', width: 'min(78vw, 310px)', height: '360px', opacity: 1, scale: 1, zIndex: 10, pointerEvents: 'auto' },
       [1]: { left: '88%', width: 'min(34vw, 132px)', height: '255px', opacity: 0.42, scale: 0.94, zIndex: 4, pointerEvents: 'auto' },
       [2]: { left: '110%', width: 'min(34vw, 132px)', height: '255px', opacity: 0, scale: 0.9, zIndex: 1, pointerEvents: 'none' },
     };
@@ -64,7 +83,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
       </div>
 
       <div className="relative mx-auto h-[390px] md:hidden">
-        {collectionStrip.map((collection, index) => {
+        {items.map((collection, index) => {
           const offset = getOffset(index);
           const activeCard = offset === 0;
           const slot = getMobileSlot(offset);
@@ -72,7 +91,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
           return (
             <button
               key={collection.id}
-              onClick={() => offset !== 0 && setActiveIndex(wrapIndex(activeIndex + offset))}
+              onClick={() => activeCard ? openItem(collection) : setActiveIndex(wrapIndex(safeActiveIndex + offset))}
               aria-current={activeCard}
               className="absolute top-1/2 overflow-hidden rounded-[22px] bg-[#eeeeee] outline-none transition-all duration-700"
               style={{
@@ -91,7 +110,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
               {activeCard && (
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-5 pb-5 pt-20 text-left text-white">
                   <span className="block text-lg font-semibold">{collection.title}</span>
-                  <span className="mt-1 block text-xs text-white/80">Tap side cards to browse</span>
+                  <span className="mt-1 block text-xs text-white/80">Tap to view detail</span>
                 </span>
               )}
             </button>
@@ -100,7 +119,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
       </div>
 
       <div className="relative mx-auto hidden h-[430px] max-w-7xl md:block md:h-[520px]">
-        {collectionStrip.map((collection, index) => {
+        {items.map((collection, index) => {
           const offset = getOffset(index);
           const distance = Math.abs(offset);
           const activeCard = offset === 0;
@@ -110,7 +129,7 @@ export default function Collection({ collections = fallbackCollections }: Collec
           return (
             <button
               key={collection.id}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => activeCard ? openItem(collection) : setActiveIndex(index)}
               className="absolute top-1/2 overflow-hidden bg-[#eeeeee] shadow-sm transition-all duration-700"
               style={{
                 left: '50%',
@@ -129,13 +148,13 @@ export default function Collection({ collections = fallbackCollections }: Collec
       </div>
 
       <div className="mt-5 flex justify-center gap-2 md:hidden">
-        {collectionStrip.map((collection, index) => (
-          <button key={collection.id} onClick={() => setActiveIndex(index)} aria-label={`Show ${collection.title}`} className={`h-1.5 rounded-full transition-all ${index === activeIndex ? 'w-7 bg-[#111111]' : 'w-1.5 bg-[#d6d6d6]'}`} />
+        {items.map((collection, index) => (
+          <button key={collection.id} onClick={() => setActiveIndex(index)} aria-label={`Show ${collection.title}`} className={`h-1.5 rounded-full transition-all ${index === safeActiveIndex ? 'w-7 bg-[#111111]' : 'w-1.5 bg-[#d6d6d6]'}`} />
         ))}
       </div>
       <div className="mt-6 text-center">
-        <h3 className="mb-2 text-lg font-semibold text-[#111111]">{active.title} Collection</h3>
-        <Link href={active.linkHref || `/main-product?collection=${encodeURIComponent(active.title)}`} className="border-b border-[#111111] text-lg leading-none text-[#111111]">See Detail</Link>
+        <h3 className="mb-2 text-lg font-semibold text-[#111111]">{active.title}</h3>
+        <Link href={active.detailHref} className="border-b border-[#111111] text-lg leading-none text-[#111111]">See Detail</Link>
       </div>
       <div className="mt-8 flex justify-center gap-4 md:gap-6">
         <button onClick={() => navigate('prev')} aria-label="Previous collection" className="flex h-11 w-11 items-center justify-center rounded-full border border-[#dedede] transition-colors hover:bg-[#111111] hover:text-white"><ArrowLeft size={22} /></button>
@@ -144,4 +163,3 @@ export default function Collection({ collections = fallbackCollections }: Collec
     </section>
   );
 }
-

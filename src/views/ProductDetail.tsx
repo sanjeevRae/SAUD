@@ -66,12 +66,13 @@ export default function ProductDetail({ product: productProp, productId, related
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [reviewStatus, setReviewStatus] = useState('Loading reviews...');
+  const [loadedProduct, setLoadedProduct] = useState<Product | null>(productProp ?? null);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const categoryMenuRef = useRef<HTMLDivElement>(null);
 
   const product = useMemo(
-    () => productProp ?? products.find(item => item.id === productId) ?? products[0],
-    [productId, productProp],
+    () => loadedProduct ?? productProp ?? products.find(item => item.id === productId) ?? products[0],
+    [loadedProduct, productId, productProp],
   );
 
   const relatedProducts = useMemo(
@@ -124,6 +125,26 @@ export default function ProductDetail({ product: productProp, productId, related
     trackActivity('product_detail_category_click', { gender, category: item });
     router.push(`/main-product?gender=${encodeURIComponent(gender)}&q=${encodeURIComponent(item)}&title=${encodeURIComponent(`${gender === 'men' ? 'Men' : 'Women'} ${item}`)}`);
   };
+
+  useEffect(() => {
+    setLoadedProduct(productProp ?? null);
+  }, [productProp]);
+
+  useEffect(() => {
+    if (productProp || !productId) return;
+
+    let cancelled = false;
+    const loadProduct = async () => {
+      const response = await fetch(`/api/products?action=detail&productId=${encodeURIComponent(productId)}`);
+      const data = await response.json().catch(() => ({}));
+      if (!cancelled && response.ok && data.product) setLoadedProduct(data.product);
+    };
+
+    void loadProduct();
+    return () => {
+      cancelled = true;
+    };
+  }, [productId, productProp]);
 
   useEffect(() => {
     trackActivity('product_view', { productId: product.id, name: product.name, category: product.category });
@@ -376,7 +397,6 @@ export default function ProductDetail({ product: productProp, productId, related
     </div>
   );
 }
-
 
 
 

@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: 'Discover featured products, curated collections, categories, and modern fashion essentials.',
 };
 
+export const revalidate = 60;
+
 export default async function HomePage() {
   const homepage = await getHomepageConfig();
   return <Home homepage={homepage} />;

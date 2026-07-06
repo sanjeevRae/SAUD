@@ -131,15 +131,27 @@ async function fetchCollection<T>(collectionPath: string): Promise<T[]> {
   if (!firestoreBaseUrl) return [];
 
   try {
-    const response = await fetch(`${firestoreBaseUrl}/${collectionPath}`, {
-      next: { revalidate: 60 },
-      signal: firestoreSignal(),
-    });
+    const documents: FirestoreDocument[] = [];
+    let pageToken = '';
 
-    if (!response.ok) return [];
+    do {
+      const url = new URL(`${firestoreBaseUrl}/${collectionPath}`);
+      url.searchParams.set('pageSize', '100');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-    const payload = (await response.json()) as { documents?: FirestoreDocument[] };
-    return (payload.documents ?? []).map(document => ({
+      const response = await fetch(url, {
+        next: { revalidate: 60 },
+        signal: firestoreSignal(),
+      });
+
+      if (!response.ok) return [];
+
+      const payload = (await response.json()) as { documents?: FirestoreDocument[]; nextPageToken?: string };
+      documents.push(...(payload.documents ?? []));
+      pageToken = payload.nextPageToken || '';
+    } while (pageToken);
+
+    return documents.map(document => ({
       id: documentId(document.name),
       ...fromFirestoreFields(document.fields ?? {}),
     })) as T[];
@@ -339,6 +351,5 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
     socialLinks,
   };
 }
-
 
 

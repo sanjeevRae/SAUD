@@ -167,10 +167,26 @@ function docId(name: string) {
 
 export async function listDocuments<T extends PlainRecord>(collectionPath: string) {
   const token = await getAccessToken();
-  const response = await fetch(documentsBaseUrl(collectionPath), { headers: { authorization: `Bearer ${token}` }, signal: adminSignal() });
-  if (!response.ok) throw new Error(await response.text());
-  const payload = await response.json() as { documents?: { name: string; fields?: Record<string, FirestoreValue> }[] };
-  return (payload.documents ?? []).map(document => ({
+  const documents: { name: string; fields?: Record<string, FirestoreValue> }[] = [];
+  let pageToken = '';
+
+  do {
+    const url = new URL(documentsBaseUrl(collectionPath));
+    url.searchParams.set('pageSize', '100');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+    const response = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: adminSignal() });
+    if (!response.ok) throw new Error(await response.text());
+
+    const payload = await response.json() as {
+      documents?: { name: string; fields?: Record<string, FirestoreValue> }[];
+      nextPageToken?: string;
+    };
+    documents.push(...(payload.documents ?? []));
+    pageToken = payload.nextPageToken || '';
+  } while (pageToken);
+
+  return documents.map(document => ({
     id: docId(document.name),
     ...Object.fromEntries(Object.entries(document.fields ?? {}).map(([key, value]) => [key, fromFirestoreValue(value)])),
   })) as unknown as T[];

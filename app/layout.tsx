@@ -28,9 +28,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
   },
   openGraph: {
     title: 'Saud Leather | Premium Leather Goods and Fashion Essentials',
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/logo.png',
-        alt: 'Saud Leather logo',
+        url: '/icon.png',
+        alt: 'Saud Leather icon',
       },
     ],
   },
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Saud Leather | Premium Leather Goods and Fashion Essentials',
     description: 'Shop Saud Leather for premium leather goods, curated fashion essentials, bags, apparel, and everyday accessories.',
-    images: ['/logo.png'],
+    images: ['/icon.png'],
   },
   verification: {
     google: 'QDjIc0JmoAKdkmGRguwIJf7lzqBj7GLiUGkHa2kSfkY',

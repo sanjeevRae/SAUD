@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, MoveUpRight } from 'lucide-react';
 import { collections as fallbackCollections, type Collection as StoreCollection } from '@/data/products';
@@ -106,7 +107,14 @@ export default function Collection({ collections }: CollectionProps) {
                 transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             >
-              <img src={collection.image} alt={collection.title} className="h-full w-full object-cover" />
+              <Image
+                src={collection.image}
+                alt={collection.title}
+                width={330}
+                height={430}
+                sizes={activeCard ? '(max-width: 768px) 78vw, 330px' : '(max-width: 768px) 34vw, 225px'}
+                className="h-full w-full object-cover"
+              />
               {activeCard && (
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-5 pb-5 pt-20 text-left text-white">
                   <span className="block text-lg font-semibold">{collection.title}</span>
@@ -141,7 +149,14 @@ export default function Collection({ collections }: CollectionProps) {
                 transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             >
-              <img src={collection.image} alt={collection.title} className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" />
+              <Image
+                src={collection.image}
+                alt={collection.title}
+                width={330}
+                height={430}
+                sizes={activeCard ? '330px' : '225px'}
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+              />
             </button>
           );
         })}

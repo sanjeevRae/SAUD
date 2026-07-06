@@ -3,8 +3,11 @@ import Home from '@/views/Home';
 import { getHomepageConfig } from '@/lib/storefront';
 
 export const metadata: Metadata = {
-  title: 'Saud Leather | Home',
-  description: 'Discover featured products, curated collections, categories, and modern fashion essentials.',
+  title: 'Premium Leather Goods and Fashion Essentials',
+  description: 'Discover Saud Leather featured products, curated collections, fashion categories, bags, apparel, and everyday essentials.',
+  alternates: {
+    canonical: '/',
+  },
 };
 
 export const revalidate = 60;

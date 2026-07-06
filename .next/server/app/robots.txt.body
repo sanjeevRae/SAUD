@@ -1,0 +1,10 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /cart
+Disallow: /profile
+Disallow: /api/
+
+Host: https://saud-leather.vercel.app
+Sitemap: https://saud-leather.vercel.app/sitemap.xml

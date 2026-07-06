@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '@/data/products';
 
@@ -57,7 +58,14 @@ export default function FeaturedProducts({ products = [] }: FeaturedProductsProp
         {visibleProducts.slice(0, 4).map(product => (
           <Link key={product.id} href={product.linkHref || `/product/${product.id}`} className="group min-w-0 text-left font-body">
             <div className="mb-2 aspect-[4/5] overflow-hidden rounded-lg bg-[#f1f1f1] sm:mb-3 sm:rounded-xl">
-              <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <Image
+                src={product.image}
+                alt={product.name}
+                width={420}
+                height={525}
+                sizes="(min-width: 1024px) 25vw, 50vw"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
             </div>
             <p className="mb-1 truncate font-body text-[9px] uppercase tracking-[0.08em] text-[#777777] sm:text-[11px] sm:tracking-[0.1em]">{product.category}</p>
             <h3 className="line-clamp-2 min-h-[34px] font-body text-[11px] font-medium leading-snug text-[#111111] sm:min-h-[42px] sm:text-sm">{product.name}</h3>

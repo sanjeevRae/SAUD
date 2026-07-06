@@ -1,5 +1,19 @@
+import type { Metadata } from 'next';
 import MainProduct from '@/views/MainProduct';
 import { getProductsByQuery } from '@/lib/storefront';
+
+export const metadata: Metadata = {
+  title: 'Shop Products',
+  description: 'Browse Saud Leather products, including leather goods, fashion essentials, bags, apparel, and curated collections.',
+  alternates: {
+    canonical: '/main-product',
+  },
+  openGraph: {
+    title: 'Shop Products | Saud Leather',
+    description: 'Browse Saud Leather products, leather goods, bags, apparel, and curated collections.',
+    url: '/main-product',
+  },
+};
 
 type MainProductRouteProps = {
   searchParams: Promise<{

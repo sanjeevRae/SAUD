@@ -17,6 +17,7 @@ const tokenUrl = 'https://oauth2.googleapis.com/token';
 const scope = 'https://www.googleapis.com/auth/datastore';
 const adminFetchTimeoutMs = Number(process.env.FIRESTORE_ADMIN_TIMEOUT_MS ?? 5000);
 let cachedToken: { value: string; expiresAt: number } | null = null;
+let tokenRequest: Promise<string> | null = null;
 
 function base64url(input: Buffer | string) {
   return Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -40,38 +41,47 @@ function adminSignal() {
 
 async function getAccessToken() {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) return cachedToken.value;
+  if (tokenRequest) return tokenRequest;
 
-  const { clientEmail, privateKey } = requiredEnv();
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const claim = {
-    iss: clientEmail,
-    scope,
-    aud: tokenUrl,
-    exp: now + 3600,
-    iat: now,
-  };
-  const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claim))}`;
-  const signer = createSign('RSA-SHA256');
-  signer.update(unsigned);
-  signer.end();
-  const signature = signer.sign(createPrivateKey(privateKey));
-  const assertion = `${unsigned}.${base64url(signature)}`;
+  tokenRequest = (async () => {
+    const { clientEmail, privateKey } = requiredEnv();
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const claim = {
+      iss: clientEmail,
+      scope,
+      aud: tokenUrl,
+      exp: now + 3600,
+      iat: now,
+    };
+    const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claim))}`;
+    const signer = createSign('RSA-SHA256');
+    signer.update(unsigned);
+    signer.end();
+    const signature = signer.sign(createPrivateKey(privateKey));
+    const assertion = `${unsigned}.${base64url(signature)}`;
 
-  const response = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    signal: adminSignal(),
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    }),
-  });
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      signal: adminSignal(),
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion,
+      }),
+    });
 
-  if (!response.ok) throw new Error('Failed to authenticate with Google service account.');
-  const payload = await response.json() as { access_token: string; expires_in: number };
-  cachedToken = { value: payload.access_token, expiresAt: Date.now() + payload.expires_in * 1000 };
-  return payload.access_token;
+    if (!response.ok) throw new Error('Failed to authenticate with Google service account.');
+    const payload = await response.json() as { access_token: string; expires_in: number };
+    cachedToken = { value: payload.access_token, expiresAt: Date.now() + payload.expires_in * 1000 };
+    return payload.access_token;
+  })();
+
+  try {
+    return await tokenRequest;
+  } finally {
+    tokenRequest = null;
+  }
 }
 
 function toFirestoreValue(value: JsonValue | undefined): FirestoreValue | undefined {
@@ -175,7 +185,11 @@ export async function listDocuments<T extends PlainRecord>(collectionPath: strin
     url.searchParams.set('pageSize', '100');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-    const response = await fetch(url, { headers: { authorization: `Bearer ${token}` }, signal: adminSignal() });
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+      next: { revalidate: 60 },
+      signal: adminSignal(),
+    });
     if (!response.ok) throw new Error(await response.text());
 
     const payload = await response.json() as {
@@ -260,6 +274,7 @@ export async function getDocument<T extends PlainRecord>(collectionPath: string,
   const token = await getAccessToken();
   const response = await fetch(`${documentsBaseUrl(collectionPath)}/${encodeURIComponent(id)}`, {
     headers: { authorization: `Bearer ${token}` },
+    next: { revalidate: 60 },
     signal: adminSignal(),
   });
   if (response.status === 404) return null;

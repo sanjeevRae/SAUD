@@ -1,9 +1,18 @@
-﻿import Link from 'next/link';
+﻿import type { Metadata } from 'next';
+import Link from 'next/link';
 import ProductAdmin from '@/components/admin/ProductAdmin';
 import CmsAdmin from '@/components/admin/CmsAdmin';
 import { getDocument } from '@/lib/firestoreAdmin';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Admin',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 const collections = [
   { name: 'Products', path: 'products', fields: 'Prices, images, stock, colors, SEO', count: 'Store' },

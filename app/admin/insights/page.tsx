@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { getDocument } from '@/lib/firestoreAdmin';
@@ -20,6 +21,14 @@ const InsightDashboard = nextDynamic(() => import('@/components/admin/InsightDas
 });
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Admin Insights',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type AdminInsightsPageProps = {
   searchParams: Promise<{ userId?: string }>;

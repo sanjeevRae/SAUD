@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, MoveUpRight } from 'lucide-react';
 import { products as fallbackProducts, type Product } from '@/data/products';
@@ -87,9 +88,12 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
                 transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             >
-              <img
+              <Image
                 src={product.image}
                 alt={product.name}
+                width={285}
+                height={330}
+                sizes={activeCard ? '72vw' : '34vw'}
                 className="h-full w-full object-cover object-center transition-transform duration-700"
                 style={{ filter: activeCard ? 'drop-shadow(0 18px 20px rgba(0,0,0,0.10))' : 'grayscale(0.12)', transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
               />
@@ -126,9 +130,12 @@ export default function Products({ products = fallbackProducts }: ProductsProps)
                 className="absolute bottom-3 m-0 -translate-x-1/2 appearance-none rounded-none border-0 bg-transparent p-0 leading-none outline-none transition-[left,opacity,transform] duration-700 focus:outline-none focus-visible:outline-none"
                 style={{ left: slot.left, zIndex: slot.zIndex, opacity: slot.opacity, transform: `translateX(-50%) scale(${slot.scale})`, pointerEvents: slot.pointerEvents, transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
               >
-                <img
-                src={product.image}
-                alt={product.name}
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  width={260}
+                  height={420}
+                  sizes={activeCard ? '260px' : '142px'}
                   className={`object-contain object-bottom transition-[height,width,filter,transform] duration-700 ${
                     activeCard
                       ? 'h-[395px] w-[245px] drop-shadow-[0_22px_28px_rgba(0,0,0,0.10)] xl:h-[420px] xl:w-[260px]'

@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import type { HeroBanner } from '@/lib/storefront';
 
@@ -14,7 +15,14 @@ export default function Hero({ banners }: HeroProps) {
 
   return (
     <section className="relative h-[500px] overflow-hidden bg-[#111111] md:h-[640px]">
-      <img src={image} alt="K-fashion editorial" className="absolute inset-0 !h-full !w-full max-w-none object-cover object-center" />
+      <Image
+        src={image}
+        alt="K-fashion editorial"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center"
+      />
       <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/72 via-black/35 to-transparent" />
       <div className="absolute bottom-10 left-5 z-20 max-w-[560px] text-white md:bottom-16 md:left-10">
         <h1 className="font-body mb-4 text-[34px] font-normal leading-[1.03] md:text-[44px]">{title}</h1>

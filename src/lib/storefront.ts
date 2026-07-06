@@ -7,6 +7,7 @@
   type Product,
   type Testimonial,
 } from '@/data/products';
+import { unstable_cache } from 'next/cache';
 
 export type ProductQuery = {
   q?: string;
@@ -302,7 +303,7 @@ export async function getSocialLinks() {
     .filter((link): link is SocialLink => Boolean(link));
 }
 
-export async function getHomepageConfig(): Promise<HomepageConfig> {
+async function getHomepageConfigFresh(): Promise<HomepageConfig> {
   const [noticeBanners, heroBanners, products, featuredProducts, collections, categories, testimonials, socialLinks] = await Promise.all([
     fetchCollection<NoticeBanner>('homepage/noticeBanners/items'),
     fetchCollection<HeroBanner>('homepage/heroBanners/items'),
@@ -352,4 +353,6 @@ export async function getHomepageConfig(): Promise<HomepageConfig> {
   };
 }
 
-
+export const getHomepageConfig = unstable_cache(getHomepageConfigFresh, ['homepage-config'], {
+  revalidate: 60,
+});
